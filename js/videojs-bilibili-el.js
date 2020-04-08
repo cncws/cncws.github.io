@@ -63,6 +63,8 @@ class VideoJSBilibiliEl extends HTMLElement {
       }
     };
     this.vplayer = videojs(this.videojs_el, defaultOptions, function() {
+      this.volume(0.2);
+
       this.on(this.tech_, 'click', 
         videojs.getComponent('BiliPlayToggle').prototype.handleClick);
     });
