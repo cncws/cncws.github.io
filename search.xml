@@ -4,6 +4,60 @@
   
     
     <entry>
+      <title>3 Sum Closest</title>
+      <link href="/programming/leetcode/3-sum-closest/"/>
+      <url>/programming/leetcode/3-sum-closest/</url>
+      
+        <content type="html"><![CDATA[<p>Given an array nums of n integers and an integer target, find three integers in nums such that the sum is closest to target. Return the sum of the three integers. You may assume that each input would have exactly one solution.</p><p>Example 1:</p><figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">Input: nums = [-1,2,1,-4], target = 1</span><br><span class="line">Output: 2</span><br><span class="line">Explanation: The sum that is closest to the target is 2. (-1 + 2 + 1 = 2).</span><br></pre></td></tr></table></figure><p>Constraints:</p><ul><li><code>3 &lt;= nums.length &lt;= 10^3</code></li><li><code>-10^3 &lt;= nums[i] &lt;= 10^3</code></li><li><code>-10^4 &lt;= target &lt;= 10^4</code></li></ul><h1 id="sorting-two-pointers">Sorting + Two Pointers</h1><figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="comment"># Time: O(n^2)</span></span><br><span class="line"><span class="comment"># Space: O(log(n)) to O(n),</span></span><br><span class="line"><span class="comment">#   depending on the implementation of the sorting algorithm.</span></span><br><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">Solution</span>:</span></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">threeSumClosest</span><span class="params">(self, nums: <span class="string">'List[int]'</span>, target: int)</span> -&gt; int:</span></span><br><span class="line">        nums.sort()  <span class="comment"># O(n log(n))</span></span><br><span class="line">        best = float(<span class="string">'inf'</span>)</span><br><span class="line"></span><br><span class="line">        <span class="keyword">for</span> i <span class="keyword">in</span> range(len(nums) - <span class="number">2</span>):  <span class="comment"># O(n^2)</span></span><br><span class="line">            l, r = i + <span class="number">1</span>, len(nums) - <span class="number">1</span></span><br><span class="line">            <span class="keyword">while</span> l &lt; r:</span><br><span class="line">                sum_ = nums[i] + nums[l] + nums[r]</span><br><span class="line">                <span class="keyword">if</span> sum_ == target:  <span class="comment"># target found</span></span><br><span class="line">                    <span class="keyword">return</span> target</span><br><span class="line">                <span class="keyword">if</span> abs(best - target) &gt; abs(sum_ - target):</span><br><span class="line">                    best = sum_</span><br><span class="line">                <span class="keyword">if</span> sum_ &gt; target:</span><br><span class="line">                    r -= <span class="number">1</span></span><br><span class="line">                    <span class="keyword">while</span> l &lt; r <span class="keyword">and</span> nums[r] == nums[r + <span class="number">1</span>]:  <span class="comment"># skip equal num (optional)</span></span><br><span class="line">                        r -= <span class="number">1</span></span><br><span class="line">                <span class="keyword">else</span>:</span><br><span class="line">                    l += <span class="number">1</span></span><br><span class="line">                    <span class="keyword">while</span> l &lt; r <span class="keyword">and</span> nums[l] == nums[l - <span class="number">1</span>]:</span><br><span class="line">                        l += <span class="number">1</span></span><br><span class="line"></span><br><span class="line">        <span class="keyword">return</span> best</span><br></pre></td></tr></table></figure>]]></content>
+      
+      
+      <categories>
+          
+          <category> 编程 </category>
+          
+      </categories>
+      
+      
+        <tags>
+            
+            <tag> leetcode </tag>
+            
+            <tag> array </tag>
+            
+        </tags>
+      
+    </entry>
+    
+    
+    
+    <entry>
+      <title>Min Stack</title>
+      <link href="/programming/leetcode/min-stack/"/>
+      <url>/programming/leetcode/min-stack/</url>
+      
+        <content type="html"><![CDATA[<p>Design a stack that supports push, pop, top, and retrieving the minimum element in constant time.</p><ul><li><code>push(x)</code> -- Push element x onto stack.</li><li><code>pop()</code> -- Removes the element on top of the stack.</li><li><code>top()</code> -- Get the top element.</li><li><code>getMin()</code> -- Retrieve the minimum element in the stack.</li></ul><p>Example 1:</p><figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">Input:</span><br><span class="line">[&quot;MinStack&quot;,&quot;push&quot;,&quot;push&quot;,&quot;push&quot;,&quot;getMin&quot;,&quot;pop&quot;,&quot;top&quot;,&quot;getMin&quot;]</span><br><span class="line">[[],[-2],[0],[-3],[],[],[],[]]</span><br><span class="line"></span><br><span class="line">Output:</span><br><span class="line">[null,null,null,null,-3,null,0,-2]</span><br><span class="line"></span><br><span class="line">Explanation:</span><br><span class="line">MinStack minStack = new MinStack();</span><br><span class="line">minStack.push(-2);</span><br><span class="line">minStack.push(0);</span><br><span class="line">minStack.push(-3);</span><br><span class="line">minStack.getMin(); // return -3</span><br><span class="line">minStack.pop();</span><br><span class="line">minStack.top();    // return 0</span><br><span class="line">minStack.getMin(); // return -2</span><br></pre></td></tr></table></figure><p><strong>Constraints</strong>: Methods pop, top and getMin operations will always be called on non-empty stacks.</p><h1 id="two-stacks">Two stacks</h1><p>One stack to store values. To get min in constant time, we need another stack to store min values of current stack. (Or we can save (val, min) in one stack).</p><figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">push  3, 2, 4, 1, 5, 0</span><br><span class="line"></span><br><span class="line">stack         min_stack</span><br><span class="line">3             3</span><br><span class="line">3,2           3,2</span><br><span class="line">3,2,4         3,2,2    &lt;- push 2</span><br><span class="line">3,2,4,1       3,2,2,1</span><br><span class="line">3,2,4,1,5     3,2,2,1,1</span><br><span class="line">3,2,4,1,5,0   3,2,2,1,1,0</span><br></pre></td></tr></table></figure><a id="more"></a><figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">MinStack</span>:</span></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">__init__</span><span class="params">(self)</span>:</span></span><br><span class="line">        self.stack = []</span><br><span class="line">        self.min_stack = [float(<span class="string">'inf'</span>)]  <span class="comment"># careful about IndexError</span></span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">push</span><span class="params">(self, x: int)</span> -&gt; <span class="keyword">None</span>:</span></span><br><span class="line">        self.stack.append(x)</span><br><span class="line">        self.min_stack.append(min(x, self.getMin()))</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">pop</span><span class="params">(self)</span> -&gt; <span class="keyword">None</span>:</span></span><br><span class="line">        self.stack.pop()</span><br><span class="line">        self.min_stack.pop()</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">top</span><span class="params">(self)</span> -&gt; int:</span></span><br><span class="line">        <span class="keyword">return</span> self.stack[<span class="number">-1</span>]</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">getMin</span><span class="params">(self)</span> -&gt; int:</span></span><br><span class="line">        <span class="keyword">return</span> self.min_stack[<span class="number">-1</span>]</span><br></pre></td></tr></table></figure><h1 id="min-value-variable">Min value variable</h1><p>In previous approach if we push values which are greater than min value <code>n</code> times, we also need push min value <code>n</code> times too.</p><ul><li>Push: We can use a variable recode current min value. If a greater value pushed, we won't push min value again.</li><li>Pop: When poped a value, we compare it with current min value, pop min stack if and only if they are equal.</li></ul><p>However, when pushing values which are equal to min value many times, wo also need push min value repeatedly. Otherwise, we can't preserve the min value after pop a value.</p><figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">push  4, 1, 3, 9</span><br><span class="line">stack         min_stack      min_value</span><br><span class="line">4             4              4</span><br><span class="line">4,1           4,1            1</span><br><span class="line">4,1,3         4,1            1</span><br><span class="line">4,1,3,9       4,1            1</span><br><span class="line"></span><br><span class="line">pop  9, 3, 1, 4</span><br><span class="line">stack         min_stack      min_value</span><br><span class="line">4,1,3         4,1            1</span><br><span class="line">4,1           4,1            1</span><br><span class="line">4             4              4</span><br><span class="line">_             _              _</span><br><span class="line"></span><br><span class="line">======================================</span><br><span class="line"></span><br><span class="line">push  2, 2, 2</span><br><span class="line">stack         min_stack      min_value</span><br><span class="line">2             2              2</span><br><span class="line">2,2           2,2            2</span><br><span class="line">2,2,2         2,2,2          2</span><br><span class="line"></span><br><span class="line">pop  2, 2, 2</span><br><span class="line">stack         min_stack      min_value</span><br><span class="line">2,2           2,2            2</span><br><span class="line">2             2              2</span><br><span class="line">_             _              _</span><br></pre></td></tr></table></figure><figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">MinStack</span>:</span></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">__init__</span><span class="params">(self)</span>:</span></span><br><span class="line">        self.stack = []</span><br><span class="line">        self.min_stack = [float(<span class="string">'inf'</span>)]</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">push</span><span class="params">(self, x: int)</span> -&gt; <span class="keyword">None</span>:</span></span><br><span class="line">        self.stack.append(x)</span><br><span class="line">        <span class="keyword">if</span> x &lt;= self.min_stack[<span class="number">-1</span>]:</span><br><span class="line">            self.min_stack.append(x)</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">pop</span><span class="params">(self)</span> -&gt; <span class="keyword">None</span>:</span></span><br><span class="line">        v = self.stack.pop()</span><br><span class="line">        <span class="keyword">if</span> v == self.min_stack[<span class="number">-1</span>]:</span><br><span class="line">            self.min_stack.pop()</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">top</span><span class="params">(self)</span> -&gt; int:</span></span><br><span class="line">        <span class="keyword">return</span> self.stack[<span class="number">-1</span>]</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">getMin</span><span class="params">(self)</span> -&gt; int:</span></span><br><span class="line">        <span class="keyword">return</span> self.min_stack[<span class="number">-1</span>]</span><br></pre></td></tr></table></figure>]]></content>
+      
+      
+      <categories>
+          
+          <category> 编程 </category>
+          
+      </categories>
+      
+      
+        <tags>
+            
+            <tag> leetcode </tag>
+            
+            <tag> stack </tag>
+            
+        </tags>
+      
+    </entry>
+    
+    
+    
+    <entry>
       <title>Continuous Subarray Sum</title>
       <link href="/programming/leetcode/continuous-subarray-sum/"/>
       <url>/programming/leetcode/continuous-subarray-sum/</url>
@@ -22,9 +76,9 @@
             
             <tag> leetcode </tag>
             
-            <tag> array </tag>
-            
             <tag> hash table </tag>
+            
+            <tag> array </tag>
             
         </tags>
       
@@ -78,9 +132,9 @@
       
         <tags>
             
-            <tag> recursion </tag>
-            
             <tag> leetcode </tag>
+            
+            <tag> recursion </tag>
             
             <tag> array </tag>
             
@@ -192,9 +246,9 @@
       
         <tags>
             
-            <tag> recursion </tag>
-            
             <tag> leetcode </tag>
+            
+            <tag> recursion </tag>
             
             <tag> palindrome </tag>
             
@@ -523,9 +577,9 @@
       
         <tags>
             
-            <tag> recursion </tag>
-            
             <tag> leetcode </tag>
+            
+            <tag> recursion </tag>
             
             <tag> hash table </tag>
             
@@ -558,9 +612,9 @@
       
         <tags>
             
-            <tag> recursion </tag>
-            
             <tag> leetcode </tag>
+            
+            <tag> recursion </tag>
             
             <tag> tree </tag>
             
@@ -593,9 +647,9 @@
       
         <tags>
             
-            <tag> recursion </tag>
-            
             <tag> leetcode </tag>
+            
+            <tag> recursion </tag>
             
             <tag> tree </tag>
             
@@ -622,9 +676,9 @@
       
         <tags>
             
-            <tag> recursion </tag>
-            
             <tag> leetcode </tag>
+            
+            <tag> recursion </tag>
             
             <tag> tree </tag>
             
@@ -867,9 +921,9 @@
       
         <tags>
             
-            <tag> recursion </tag>
-            
             <tag> leetcode </tag>
+            
+            <tag> recursion </tag>
             
             <tag> tree </tag>
             
@@ -1175,9 +1229,9 @@
       
         <tags>
             
-            <tag> recursion </tag>
-            
             <tag> leetcode </tag>
+            
+            <tag> recursion </tag>
             
             <tag> dynamic programming </tag>
             
@@ -1248,7 +1302,7 @@
       <link href="/programming/leetcode/dungeon-game/"/>
       <url>/programming/leetcode/dungeon-game/</url>
       
-        <content type="html"><![CDATA[<p>The demons had captured the princess (<strong>P</strong>) and imprisoned her in the bottom-right corner of a dungeon. The dungeon consists M x N rooms laid out in a 2D grid. Our valiant knight (<strong>K</strong>) was initially positioned in the top-left room and must fight his way through the dungeon to rescue the princess.</p><p>The knight has an initial health point represented by a positive integer. If at any point his health point drops to 0 or below, he dies immediately.</p><p>Some of the rooms are guarded by demons, so the knight loses health (<em>negative</em> integers) upon entering these rooms; other rooms are either empty (<em>0's</em>) or contain magic orbs that increase the knight's health (<em>positive</em> integers).</p><p>In order to reach the princess as quickly as possible, the knight decides to move only rightward or downward in each step.</p><p><strong>Write a function to determine the knight's minimum initial health so that he is able to rescue the princess.</strong></p><p>For example, given the dungeon below, the initial health of the knight must be at least <strong>7</strong> if he follows the optimal path <code>RIGHT -&gt; RIGHT -&gt; DOWN -&gt; DOWN</code>.</p><table style="width: auto; text-align: center;"><tbody style="border-style: solid;"><tr><td>-2(K)</td><td>-3</td><td>3</td></tr><tr><td>-5</td><td>-10</td><td>1</td></tr><tr><td>10</td><td>30</td><td>-5(P)</td></tr></tbody></table><p><strong>Note:</strong></p><ul><li>The knight's health has no upper bound.</li><li>Any room can contain threats or power-ups, even the first room the knight enters and the bottom-right room where the princess is imprisoned.</li></ul><h1 id="recursion">Recursion</h1><p>We use two variables <code>curr</code> and <code>init</code> to represent the current and minimum health. Define a function <code>helper(i, j, init, curr)</code> which returns the minimum health so that the knight can move from <code>(i, j)</code> to <code>(m, n)</code>.</p><figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">Solution</span>:</span></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">calculateMinimumHP</span><span class="params">(self, dungeon: list)</span> -&gt; int:</span></span><br><span class="line">        <span class="function"><span class="keyword">def</span> <span class="title">helper</span><span class="params">(i, j, init, curr)</span>:</span></span><br><span class="line">            <span class="keyword">if</span> i == len(dungeon) <span class="keyword">or</span> j == len(dungeon[i]):  <span class="comment"># reach the boundary</span></span><br><span class="line">                <span class="keyword">return</span> float(<span class="string">'inf'</span>)</span><br><span class="line">            curr = curr + dungeon[i][j]                    <span class="comment"># fight demons</span></span><br><span class="line">            <span class="keyword">if</span> curr &lt;= <span class="number">0</span>:</span><br><span class="line">                init = init - curr + <span class="number">1</span></span><br><span class="line">                curr = <span class="number">1</span></span><br><span class="line">            <span class="keyword">if</span> i == len(dungeon) - <span class="number">1</span> <span class="keyword">and</span> j == len(dungeon[i]) - <span class="number">1</span>:</span><br><span class="line">                <span class="keyword">return</span> init</span><br><span class="line">            <span class="keyword">return</span> min(helper(i + <span class="number">1</span>, j, init, curr),</span><br><span class="line">                       helper(i, j + <span class="number">1</span>, init, curr))</span><br><span class="line"></span><br><span class="line">        <span class="keyword">return</span> helper(<span class="number">0</span>, <span class="number">0</span>, <span class="number">0</span>, <span class="number">0</span>)</span><br></pre></td></tr></table></figure><a id="more"></a><h1 id="dynamic-programming">Dynamic Programming</h1><p>Denote <code>dp[i][j]</code> as the minimum health needed at room <code>(i, j)</code>.</p><p>Base cases: <code>dp[m][j] = dp[i][n] = inf</code>, but <code>dp[m][n - 1] = dp[m - 1][n] = 1</code>.</p><table><thead><tr class="header"><th></th><th><strong>0</strong></th><th><strong>1</strong></th><th><strong>2</strong></th><th><strong>3</strong></th></tr></thead><tbody><tr class="odd"><td><strong>0</strong></td><td><em>-2</em></td><td><em>-3</em></td><td><em>3</em></td><td><strong>inf</strong></td></tr><tr class="even"><td><strong>1</strong></td><td><em>-5</em></td><td><em>-10</em></td><td><em>1</em></td><td><strong>inf</strong></td></tr><tr class="odd"><td><strong>2</strong></td><td><em>10</em></td><td><em>30</em></td><td><em>-5</em></td><td><strong>1</strong></td></tr><tr class="even"><td><strong>3</strong></td><td><strong>inf</strong></td><td><strong>inf</strong></td><td><strong>1</strong></td><td><strong>inf</strong></td></tr></tbody></table><p>Induction rule: <code>dp[i][j] = max(1, min(dp[i + 1][j], dp[i][j + 1]) - dungeon[i][j])</code>.</p><p>The <code>min(dp[i + 1][j], dp[i][j + 1]) - dungeon[i][j])</code> is the health point needed so that after entering room <code>(i, j)</code> the left health is <code>min(dp[i + 1][j], dp[i][j + 1])</code>. The point is the knight need at least 1 health point to be alive.</p><figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="comment"># Time: O(mn)</span></span><br><span class="line"><span class="comment"># Space: O(mn)</span></span><br><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">Solution</span>:</span></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">calculateMinimumHP</span><span class="params">(self, dungeon: list)</span> -&gt; int:</span></span><br><span class="line">        m, n = len(dungeon), len(dungeon[<span class="number">0</span>])</span><br><span class="line">        dp = [[float(<span class="string">'inf'</span>)] * (n + <span class="number">1</span>) <span class="keyword">for</span> _ <span class="keyword">in</span> range(m + <span class="number">1</span>)]</span><br><span class="line">        dp[m][n - <span class="number">1</span>] = dp[m - <span class="number">1</span>][n] = <span class="number">1</span></span><br><span class="line"></span><br><span class="line">        <span class="keyword">for</span> i <span class="keyword">in</span> range(m - <span class="number">1</span>, <span class="number">-1</span>, <span class="number">-1</span>):</span><br><span class="line">            <span class="keyword">for</span> j <span class="keyword">in</span> range(n - <span class="number">1</span>, <span class="number">-1</span>, <span class="number">-1</span>):</span><br><span class="line">                before = min(dp[i + <span class="number">1</span>][j], dp[i][j + <span class="number">1</span>]) - dungeon[i][j]</span><br><span class="line">                dp[i][j] = max(before, <span class="number">1</span>)</span><br><span class="line">        <span class="keyword">return</span> dp[<span class="number">0</span>][<span class="number">0</span>]</span><br></pre></td></tr></table></figure><figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="comment"># Time: O(mn)</span></span><br><span class="line"><span class="comment"># Space: O(n)</span></span><br><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">Solution</span>:</span></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">calculateMinimumHP</span><span class="params">(self, dungeon: list)</span> -&gt; int:</span></span><br><span class="line">        m, n = len(dungeon), len(dungeon[<span class="number">0</span>])</span><br><span class="line">        dp = [float(<span class="string">'inf'</span>)] * (n + <span class="number">1</span>)</span><br><span class="line">        dp[n - <span class="number">1</span>] = <span class="number">1</span></span><br><span class="line"></span><br><span class="line">        <span class="keyword">for</span> i <span class="keyword">in</span> range(m - <span class="number">1</span>, <span class="number">-1</span>, <span class="number">-1</span>):</span><br><span class="line">            <span class="keyword">for</span> j <span class="keyword">in</span> range(n - <span class="number">1</span>, <span class="number">-1</span>, <span class="number">-1</span>):</span><br><span class="line">                before = min(dp[j], dp[j + <span class="number">1</span>]) - dungeon[i][j]</span><br><span class="line">                dp[j] = max(before, <span class="number">1</span>)</span><br><span class="line">        <span class="keyword">return</span> dp[<span class="number">0</span>]</span><br></pre></td></tr></table></figure>]]></content>
+        <content type="html"><![CDATA[<p>The demons had captured the princess (<strong>P</strong>) and imprisoned her in the bottom-right corner of a dungeon. The dungeon consists M x N rooms laid out in a 2D grid. Our valiant knight (<strong>K</strong>) was initially positioned in the top-left room and must fight his way through the dungeon to rescue the princess.</p><p>The knight has an initial health point represented by a positive integer. If at any point his health point drops to 0 or below, he dies immediately.</p><p>Some of the rooms are guarded by demons, so the knight loses health (<em>negative</em> integers) upon entering these rooms; other rooms are either empty (<em>0's</em>) or contain magic orbs that increase the knight's health (<em>positive</em> integers).</p><p>In order to reach the princess as quickly as possible, the knight decides to move only rightward or downward in each step.</p><p><strong>Write a function to determine the knight's minimum initial health so that he is able to rescue the princess.</strong></p><p>For example, given the dungeon below, the initial health of the knight must be at least <strong>7</strong> if he follows the optimal path <code>RIGHT -&gt; RIGHT -&gt; DOWN -&gt; DOWN</code>.</p><table style="width: auto; text-align: center;"><tbody style="border-style: solid;"><tr><td>-2(K)</td><td>-3</td><td>3</td></tr><tr><td>-5</td><td>-10</td><td>1</td></tr><tr><td>10</td><td>30</td><td>-5(P)</td></tr></tbody></table><p><strong>Note:</strong></p><ul><li>The knight's health has no upper bound.</li><li>Any room can contain threats or power-ups, even the first room the knight enters and the bottom-right room where the princess is imprisoned.</li></ul><h1 id="recursion">Recursion</h1><p>We use two variables <code>curr</code> and <code>init</code> to represent the current and minimum health. Define a function <code>helper(i, j, init, curr)</code> which returns the minimum health so that the knight can move from <code>(i, j)</code> to <code>(m, n)</code>.</p><figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">Solution</span>:</span></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">calculateMinimumHP</span><span class="params">(self, dungeon: list)</span> -&gt; int:</span></span><br><span class="line">        <span class="function"><span class="keyword">def</span> <span class="title">helper</span><span class="params">(i, j, init, curr)</span>:</span></span><br><span class="line">            <span class="keyword">if</span> i == len(dungeon) <span class="keyword">or</span> j == len(dungeon[i]):  <span class="comment"># reach the boundary</span></span><br><span class="line">                <span class="keyword">return</span> float(<span class="string">'inf'</span>)</span><br><span class="line">            curr = curr + dungeon[i][j]                    <span class="comment"># fight demons</span></span><br><span class="line">            <span class="keyword">if</span> curr &lt;= <span class="number">0</span>:</span><br><span class="line">                init = init - curr + <span class="number">1</span></span><br><span class="line">                curr = <span class="number">1</span></span><br><span class="line">            <span class="keyword">if</span> i == len(dungeon) - <span class="number">1</span> <span class="keyword">and</span> j == len(dungeon[i]) - <span class="number">1</span>:</span><br><span class="line">                <span class="keyword">return</span> init</span><br><span class="line">            <span class="keyword">return</span> min(helper(i + <span class="number">1</span>, j, init, curr),</span><br><span class="line">                       helper(i, j + <span class="number">1</span>, init, curr))</span><br><span class="line"></span><br><span class="line">        <span class="keyword">return</span> helper(<span class="number">0</span>, <span class="number">0</span>, <span class="number">0</span>, <span class="number">0</span>)</span><br></pre></td></tr></table></figure><a id="more"></a><h1 id="dynamic-programming">Dynamic Programming</h1><p>Denote <code>dp[i][j]</code> as the knight's minimum health if he start from room <code>(i, j)</code>.</p><p>It the knight positioned in <code>(i, j)</code>, he has two ways to go next: <code>(i + 1, j)</code> (downward) or <code>(i, j + 1)</code> (rightward).</p><ul><li>Downward: <code>dp[i][j] + dungeon[i][j] = dp[i + 1][j]</code>.</li><li>Rightward: <code>dp[i][j] + dungeon[i][j] = dp[i][j + 1]</code>.</li></ul><p>Pick the better one: <code>dp[i][j] + dungeon[i][j] = min(dp[i + 1][j], dp[i][j + 1])</code>.</p><p>So, <code>dp[i][j] = min(dp[i + 1][j], dp[i][j + 1]) - dungeon[i][j]</code>, and we need it greater than 0.</p><p>Induction rule: <code>dp[i][j] = max(1, min(dp[i + 1][j], dp[i][j + 1]) - dungeon[i][j])</code>.</p><p>Base cases: <code>dp[m][j] = dp[i][n] = inf</code>, but <code>dp[m][n - 1] = dp[m - 1][n] = 1</code> (At least 1 HP to be alive).</p><p>The last row and last column are meaningless, we add them to simplify the calculation.</p><figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">      0    1    2    3</span><br><span class="line"></span><br><span class="line">0     K             inf</span><br><span class="line">1                   inf</span><br><span class="line">2               P    1</span><br><span class="line">3    inf  inf   1   inf</span><br></pre></td></tr></table></figure><figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="comment"># Time: O(mn)</span></span><br><span class="line"><span class="comment"># Space: O(mn)</span></span><br><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">Solution</span>:</span></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">calculateMinimumHP</span><span class="params">(self, dungeon: list)</span> -&gt; int:</span></span><br><span class="line">        m, n = len(dungeon), len(dungeon[<span class="number">0</span>])</span><br><span class="line">        dp = [[float(<span class="string">'inf'</span>)] * (n + <span class="number">1</span>) <span class="keyword">for</span> _ <span class="keyword">in</span> range(m + <span class="number">1</span>)]</span><br><span class="line">        dp[m][n - <span class="number">1</span>] = dp[m - <span class="number">1</span>][n] = <span class="number">1</span></span><br><span class="line"></span><br><span class="line">        <span class="keyword">for</span> i <span class="keyword">in</span> range(m - <span class="number">1</span>, <span class="number">-1</span>, <span class="number">-1</span>):</span><br><span class="line">            <span class="keyword">for</span> j <span class="keyword">in</span> range(n - <span class="number">1</span>, <span class="number">-1</span>, <span class="number">-1</span>):</span><br><span class="line">                before = min(dp[i + <span class="number">1</span>][j], dp[i][j + <span class="number">1</span>]) - dungeon[i][j]</span><br><span class="line">                dp[i][j] = max(before, <span class="number">1</span>)</span><br><span class="line">        <span class="keyword">return</span> dp[<span class="number">0</span>][<span class="number">0</span>]</span><br></pre></td></tr></table></figure><figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="comment"># Time: O(mn)</span></span><br><span class="line"><span class="comment"># Space: O(n)</span></span><br><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">Solution</span>:</span></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">calculateMinimumHP</span><span class="params">(self, dungeon: list)</span> -&gt; int:</span></span><br><span class="line">        m, n = len(dungeon), len(dungeon[<span class="number">0</span>])</span><br><span class="line">        dp = [float(<span class="string">'inf'</span>)] * (n + <span class="number">1</span>)</span><br><span class="line">        dp[n - <span class="number">1</span>] = <span class="number">1</span></span><br><span class="line"></span><br><span class="line">        <span class="keyword">for</span> i <span class="keyword">in</span> range(m - <span class="number">1</span>, <span class="number">-1</span>, <span class="number">-1</span>):</span><br><span class="line">            <span class="keyword">for</span> j <span class="keyword">in</span> range(n - <span class="number">1</span>, <span class="number">-1</span>, <span class="number">-1</span>):</span><br><span class="line">                before = min(dp[j], dp[j + <span class="number">1</span>]) - dungeon[i][j]</span><br><span class="line">                dp[j] = max(before, <span class="number">1</span>)</span><br><span class="line">        <span class="keyword">return</span> dp[<span class="number">0</span>]</span><br></pre></td></tr></table></figure>]]></content>
       
       
       <categories>
@@ -1260,9 +1314,9 @@
       
         <tags>
             
-            <tag> recursion </tag>
-            
             <tag> leetcode </tag>
+            
+            <tag> recursion </tag>
             
             <tag> dynamic programming </tag>
             
@@ -1289,9 +1343,9 @@
       
         <tags>
             
-            <tag> recursion </tag>
-            
             <tag> leetcode </tag>
+            
+            <tag> recursion </tag>
             
             <tag> dynamic programming </tag>
             
@@ -1511,9 +1565,9 @@
       
         <tags>
             
-            <tag> recursion </tag>
-            
             <tag> leetcode </tag>
+            
+            <tag> recursion </tag>
             
             <tag> dynamic programming </tag>
             
@@ -1627,9 +1681,9 @@
       
         <tags>
             
-            <tag> recursion </tag>
-            
             <tag> leetcode </tag>
+            
+            <tag> recursion </tag>
             
             <tag> dynamic programming </tag>
             
@@ -1880,11 +1934,11 @@
       
         <tags>
             
-            <tag> stack </tag>
+            <tag> leetcode </tag>
             
             <tag> recursion </tag>
             
-            <tag> leetcode </tag>
+            <tag> stack </tag>
             
             <tag> tree </tag>
             
@@ -1923,11 +1977,11 @@
       
         <tags>
             
-            <tag> stack </tag>
-            
             <tag> leetcode </tag>
             
             <tag> dynamic programming </tag>
+            
+            <tag> stack </tag>
             
         </tags>
       
@@ -2085,11 +2139,11 @@
       
         <tags>
             
+            <tag> dict </tag>
+            
             <tag> sklearn </tag>
             
             <tag> special method </tag>
-            
-            <tag> dict </tag>
             
         </tags>
       
@@ -2114,9 +2168,9 @@
       
         <tags>
             
-            <tag> cplex </tag>
-            
             <tag> column generation </tag>
+            
+            <tag> cplex </tag>
             
         </tags>
       
@@ -3011,33 +3065,6 @@
     
     
     <entry>
-      <title>接口：协议</title>
-      <link href="/notes/fluent-python/interfaces-protocols/"/>
-      <url>/notes/fluent-python/interfaces-protocols/</url>
-      
-        <content type="html"><![CDATA[<h1 id="python文化中的接口和协议">Python文化中的接口和协议</h1><p>接口在动态类型语言中是怎么运作的呢？首先，基本的事实是，Python语言没有interface关键字，而且除了抽象基类，每个类都有接口：类实现或继承的公开属性（方法或数据属性），包括特殊方法，如<code>__getitem__</code>或<code>__add__</code>。</p><p>按照定义，受保护的属性和私有属性不在接口中：即便“受保护的”属性也只是采用命名约定实现的（单个前导下划线）；私有属性可以轻松地访问，原因也是如此。不要违背这些约定有意访问私有属性。</p><p>另一方面，不要觉得把公开数据属性放入对象的接口中不妥，因为如果需要，总能实现读值方法和设值方法，把数据属性变成特性，使用obj.attr句法的客户代码不会收到影响。</p><a id="more"></a><figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">Vector2d</span>:</span></span><br><span class="line">    typecode = <span class="string">'d'</span></span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">__init__</span><span class="params">(self, x, y)</span>:</span></span><br><span class="line">        self.x = float(x)  <span class="comment"># x和y是公开数据属性</span></span><br><span class="line">        self.y = float(y)</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">__iter__</span><span class="params">(self)</span>:</span></span><br><span class="line">        <span class="keyword">return</span> (i <span class="keyword">for</span> i <span class="keyword">in</span> (self.x, self.y))</span><br><span class="line"></span><br><span class="line">    <span class="comment"># 其他方法</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># 重构：把x和y变成只读特性，但是Vector2d的基本接口没变：</span></span><br><span class="line"><span class="comment"># 用户仍能读取my_vector.x和my_vector.y</span></span><br><span class="line"></span><br><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">Vector2d</span>:</span></span><br><span class="line">    typecode = <span class="string">'d'</span></span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">__init__</span><span class="params">(self, x, y)</span>:</span></span><br><span class="line">        self.__x = float(x)</span><br><span class="line">        self.__y = float(y)</span><br><span class="line"></span><br><span class="line"><span class="meta">    @property</span></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">x</span><span class="params">(self)</span>:</span></span><br><span class="line">        <span class="keyword">return</span> self.__x</span><br><span class="line"></span><br><span class="line"><span class="meta">    @property</span></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">y</span><span class="params">(self)</span>:</span></span><br><span class="line">        <span class="keyword">return</span> self.__y</span><br><span class="line"></span><br><span class="line">    <span class="comment"># 不受影响</span></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">__iter__</span><span class="params">(self)</span>:</span></span><br><span class="line">        <span class="keyword">return</span> (i <span class="keyword">for</span> i <span class="keyword">in</span> (self.x, self.y))</span><br><span class="line"></span><br><span class="line">    <span class="comment"># 其他方法</span></span><br></pre></td></tr></table></figure><p>关于接口，这里有个实用的补充定义：对象公开方法的子集，让对象在系统中扮演特定的角色。Python文档中的“文件类对象”或“可迭代对象”就是这个意思，这种说法指的不是特定的类。</p><p>协议是接口，但不是正式的（只由文档和约定定义），因此协议不能像正式接口那样施加限制。一个类可能只实现部分接口，这是允许的。</p><h1 id="python喜欢序列">Python喜欢序列</h1><img src="http://www.plantuml.com/plantuml/svg/VP113i8W44Ntd68kq1kuS-NQ0n0AFvQaK8MfKIjt5rDj0mjc-UU_p9y_M0E2k_AJ75oF85GVEIZDT9myA-iHQ16KPt7WOJA9bhybaPHwTKKfHThP4oEeVaGJjTbKOcVxWcao8to5u3R3w_Qb2pWVSvdyUheyfRbuezhyKbPgm1qXmjGRwmqUfQIdsNEElFTvU7VT5bniNPNosaMXVG00"><p>箭头由子类指向超类，以斜体显示的是抽象方法。</p><p>现在，看看示例中的Foo类。它没有继承abc.Sequence，而且只实现了序列协议的一个方法<code>__getitem__</code>（没有实现<code>__len__</code>方法）。这样足够访问元素、迭代和使用in运算符了。</p><figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="meta">&gt;&gt;&gt; </span><span class="class"><span class="keyword">class</span> <span class="title">Foo</span>:</span></span><br><span class="line"><span class="meta">... </span>    <span class="function"><span class="keyword">def</span> <span class="title">__getitem__</span><span class="params">(self, pos)</span>:</span></span><br><span class="line"><span class="meta">... </span>        <span class="keyword">return</span> range(<span class="number">0</span>, <span class="number">30</span>, <span class="number">10</span>)[pos]</span><br><span class="line">...</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>f = Foo()</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>f[<span class="number">1</span>]</span><br><span class="line"><span class="number">10</span></span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span><span class="keyword">for</span> i <span class="keyword">in</span> f: print(i)</span><br><span class="line">...</span><br><span class="line"><span class="number">0</span></span><br><span class="line"><span class="number">10</span></span><br><span class="line"><span class="number">20</span></span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span><span class="number">20</span> <span class="keyword">in</span> f</span><br><span class="line"><span class="literal">True</span></span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span><span class="number">15</span> <span class="keyword">in</span> f</span><br><span class="line"><span class="literal">False</span></span><br></pre></td></tr></table></figure><p>Python数据模型的哲学是尽量支持基本协议。对序列来说，即便是最简单的实现，Python也会力求做到最好。鉴于序列协议的重要性，如果没有<code>__iter__</code>和<code>__contains__</code>方法，Python会调用<code>__getitem__</code>方法，设法让迭代和in运算符可用。Python中的迭代是鸭子类型的一种极端形式：为了迭代对象，解释器会尝试调用两个不同的方法。</p><h1 id="使用猴子补丁在运行时实现协议">使用猴子补丁在运行时实现协议</h1><p>示例中的FrenchDeck类有个重大缺陷：无法洗牌。如果FrenchDeck实例的行为像序列，那么它就不需要shuffle方法，因为已经有random.shuffle函数可用。如果遵守既定协议，很有可能增加利用现有的标准库和第三方代码的可能性，这得益于鸭子类型。</p><blockquote><p><a href="https://devdocs.io/python~3.6/library/random#random.shuffle" target="_blank" rel="noopener"><code>random.shuffle(x[, random])</code></a></p><p>Shuffle the sequence x in place.</p></blockquote><figure class="highlight python"><figcaption><span>frenchdeck.py</span></figcaption><table><tr><td class="code"><pre><span class="line"><span class="keyword">import</span> collections</span><br><span class="line"></span><br><span class="line">Card = collections.namedtuple(<span class="string">'Card'</span>, [<span class="string">'rank'</span>, <span class="string">'suit'</span>])</span><br><span class="line"></span><br><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">FrenchDeck</span>:</span>  <span class="comment"># 实现序列协议的FrenchDeck类</span></span><br><span class="line">    ranks = [str(n) <span class="keyword">for</span> n <span class="keyword">in</span> range(<span class="number">2</span>, <span class="number">11</span>)] + list(<span class="string">'JQKA'</span>)</span><br><span class="line">    suits = <span class="string">'spades diamonds clubs hearts'</span>.split()</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">__init__</span><span class="params">(self)</span>:</span></span><br><span class="line">        self._cards = [Card(rank, suit) <span class="keyword">for</span> suit <span class="keyword">in</span> self.suits</span><br><span class="line">                       <span class="keyword">for</span> rank <span class="keyword">in</span> self.ranks]</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">__len__</span><span class="params">(self)</span>:</span></span><br><span class="line">        <span class="keyword">return</span> len(self._cards)</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">__getitem__</span><span class="params">(self, item)</span>:</span></span><br><span class="line">        <span class="keyword">return</span> self._cards[item]</span><br></pre></td></tr></table></figure><figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="meta">&gt;&gt;&gt; </span><span class="keyword">from</span> frenchdeck <span class="keyword">import</span> FrenchDeck</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span><span class="keyword">from</span> random <span class="keyword">import</span> shuffle</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>deck = FrenchDeck()</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>shuffle(deck)</span><br><span class="line">Traceback (most recent call last):</span><br><span class="line">  File <span class="string">"&lt;stdin&gt;"</span>, line <span class="number">1</span>, <span class="keyword">in</span> &lt;module&gt;</span><br><span class="line">  File <span class="string">"/Users/cws/opt/anaconda3/envs/python36/lib/python3.6/random.py"</span>, line <span class="number">277</span>, <span class="keyword">in</span> shuffle</span><br><span class="line">    x[i], x[j] = x[j], x[i]</span><br><span class="line">TypeError: <span class="string">'FrenchDeck'</span> object does <span class="keyword">not</span> support item assignment</span><br></pre></td></tr></table></figure><p>然而，如果尝试打乱FrenchDeck实例，会出现异常。错误消息相当明确，对象不支持为元素赋值。FrenchDeck只实现了不可变序列协议，可变的序列还必须提供<code>__setitem__</code>方法。Python是动态语言，因此我们可以在运行时修正这个问题，甚至还可以在交互式控制台中。</p><figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="meta">&gt;&gt;&gt; </span><span class="function"><span class="keyword">def</span> <span class="title">set_card</span><span class="params">(deck, position, card)</span>:</span></span><br><span class="line"><span class="meta">... </span>    deck._cards[position] = card</span><br><span class="line">...</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>FrenchDeck.__setitem__ = set_card</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>shuffle(deck)</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>deck[:<span class="number">5</span>]</span><br><span class="line">[Card(rank=<span class="string">'5'</span>, suit=<span class="string">'spades'</span>), Card(rank=<span class="string">'5'</span>, suit=<span class="string">'clubs'</span>), Card(rank=<span class="string">'Q'</span>, suit=<span class="string">'clubs'</span>), Card(rank=<span class="string">'10'</span>, suit=<span class="string">'clubs'</span>), Card(rank=<span class="string">'5'</span>, suit=<span class="string">'hearts'</span>)]</span><br></pre></td></tr></table></figure><p>特殊方法<code>__setitem__</code>的签名在语言参考中使用的是self、key和value，而这里使用的是deck、position和card。这么做是为了告诉你，每个Python方法说到底都是普通函数，把第一个参数命名为self只是一种约定。在控制台会话中使用那几个参数没问题，不过在Python源码文件中最好按照文档那样使用self、key和value。</p><p>这里的关键是，<code>set_card</code>函数要知道deck对象有一个名为<code>_cards</code>的属性，而且<code>_cards</code>的只必须是可变序列。然后，我们把<code>set_card</code>函数赋值给特殊方法<code>__setitem__</code>，从而把它依附到FrenchDeck类上。这种技术叫猴子补丁：在运行时修改类或模块，而不改动源码。猴子补丁很强大，但是打补丁的代码与要打补丁的程序耦合十分紧密，而且往往要处理隐藏和没有文档的部分。</p><p>除了举例说明猴子补丁之外，示例还强调了协议是动态的：random.shuffle函数不关心参数的类型，只要那个对象实现了部分可变序列协议即可。即便对象一开始没有所需的方法也没关系，后来再提供也行。目前，本章讨论的主题是“鸭子类型”：对象的类型无关紧要，只要实现了特定的协议即可。</p>]]></content>
-      
-      
-      <categories>
-          
-          <category> 笔记 </category>
-          
-      </categories>
-      
-      
-        <tags>
-            
-            <tag> Fluent Python </tag>
-            
-            <tag> protocols </tag>
-            
-        </tags>
-      
-    </entry>
-    
-    
-    
-    <entry>
       <title>接口：抽象基类</title>
       <link href="/notes/fluent-python/interfaces-abc-s/"/>
       <url>/notes/fluent-python/interfaces-abc-s/</url>
@@ -3057,6 +3084,33 @@
             <tag> Fluent Python </tag>
             
             <tag> ABC </tag>
+            
+        </tags>
+      
+    </entry>
+    
+    
+    
+    <entry>
+      <title>接口：协议</title>
+      <link href="/notes/fluent-python/interfaces-protocols/"/>
+      <url>/notes/fluent-python/interfaces-protocols/</url>
+      
+        <content type="html"><![CDATA[<h1 id="python文化中的接口和协议">Python文化中的接口和协议</h1><p>接口在动态类型语言中是怎么运作的呢？首先，基本的事实是，Python语言没有interface关键字，而且除了抽象基类，每个类都有接口：类实现或继承的公开属性（方法或数据属性），包括特殊方法，如<code>__getitem__</code>或<code>__add__</code>。</p><p>按照定义，受保护的属性和私有属性不在接口中：即便“受保护的”属性也只是采用命名约定实现的（单个前导下划线）；私有属性可以轻松地访问，原因也是如此。不要违背这些约定有意访问私有属性。</p><p>另一方面，不要觉得把公开数据属性放入对象的接口中不妥，因为如果需要，总能实现读值方法和设值方法，把数据属性变成特性，使用obj.attr句法的客户代码不会收到影响。</p><a id="more"></a><figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">Vector2d</span>:</span></span><br><span class="line">    typecode = <span class="string">'d'</span></span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">__init__</span><span class="params">(self, x, y)</span>:</span></span><br><span class="line">        self.x = float(x)  <span class="comment"># x和y是公开数据属性</span></span><br><span class="line">        self.y = float(y)</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">__iter__</span><span class="params">(self)</span>:</span></span><br><span class="line">        <span class="keyword">return</span> (i <span class="keyword">for</span> i <span class="keyword">in</span> (self.x, self.y))</span><br><span class="line"></span><br><span class="line">    <span class="comment"># 其他方法</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># 重构：把x和y变成只读特性，但是Vector2d的基本接口没变：</span></span><br><span class="line"><span class="comment"># 用户仍能读取my_vector.x和my_vector.y</span></span><br><span class="line"></span><br><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">Vector2d</span>:</span></span><br><span class="line">    typecode = <span class="string">'d'</span></span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">__init__</span><span class="params">(self, x, y)</span>:</span></span><br><span class="line">        self.__x = float(x)</span><br><span class="line">        self.__y = float(y)</span><br><span class="line"></span><br><span class="line"><span class="meta">    @property</span></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">x</span><span class="params">(self)</span>:</span></span><br><span class="line">        <span class="keyword">return</span> self.__x</span><br><span class="line"></span><br><span class="line"><span class="meta">    @property</span></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">y</span><span class="params">(self)</span>:</span></span><br><span class="line">        <span class="keyword">return</span> self.__y</span><br><span class="line"></span><br><span class="line">    <span class="comment"># 不受影响</span></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">__iter__</span><span class="params">(self)</span>:</span></span><br><span class="line">        <span class="keyword">return</span> (i <span class="keyword">for</span> i <span class="keyword">in</span> (self.x, self.y))</span><br><span class="line"></span><br><span class="line">    <span class="comment"># 其他方法</span></span><br></pre></td></tr></table></figure><p>关于接口，这里有个实用的补充定义：对象公开方法的子集，让对象在系统中扮演特定的角色。Python文档中的“文件类对象”或“可迭代对象”就是这个意思，这种说法指的不是特定的类。</p><p>协议是接口，但不是正式的（只由文档和约定定义），因此协议不能像正式接口那样施加限制。一个类可能只实现部分接口，这是允许的。</p><h1 id="python喜欢序列">Python喜欢序列</h1><img src="http://www.plantuml.com/plantuml/svg/VP113i8W44Ntd68kq1kuS-NQ0n0AFvQaK8MfKIjt5rDj0mjc-UU_p9y_M0E2k_AJ75oF85GVEIZDT9myA-iHQ16KPt7WOJA9bhybaPHwTKKfHThP4oEeVaGJjTbKOcVxWcao8to5u3R3w_Qb2pWVSvdyUheyfRbuezhyKbPgm1qXmjGRwmqUfQIdsNEElFTvU7VT5bniNPNosaMXVG00"><p>箭头由子类指向超类，以斜体显示的是抽象方法。</p><p>现在，看看示例中的Foo类。它没有继承abc.Sequence，而且只实现了序列协议的一个方法<code>__getitem__</code>（没有实现<code>__len__</code>方法）。这样足够访问元素、迭代和使用in运算符了。</p><figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="meta">&gt;&gt;&gt; </span><span class="class"><span class="keyword">class</span> <span class="title">Foo</span>:</span></span><br><span class="line"><span class="meta">... </span>    <span class="function"><span class="keyword">def</span> <span class="title">__getitem__</span><span class="params">(self, pos)</span>:</span></span><br><span class="line"><span class="meta">... </span>        <span class="keyword">return</span> range(<span class="number">0</span>, <span class="number">30</span>, <span class="number">10</span>)[pos]</span><br><span class="line">...</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>f = Foo()</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>f[<span class="number">1</span>]</span><br><span class="line"><span class="number">10</span></span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span><span class="keyword">for</span> i <span class="keyword">in</span> f: print(i)</span><br><span class="line">...</span><br><span class="line"><span class="number">0</span></span><br><span class="line"><span class="number">10</span></span><br><span class="line"><span class="number">20</span></span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span><span class="number">20</span> <span class="keyword">in</span> f</span><br><span class="line"><span class="literal">True</span></span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span><span class="number">15</span> <span class="keyword">in</span> f</span><br><span class="line"><span class="literal">False</span></span><br></pre></td></tr></table></figure><p>Python数据模型的哲学是尽量支持基本协议。对序列来说，即便是最简单的实现，Python也会力求做到最好。鉴于序列协议的重要性，如果没有<code>__iter__</code>和<code>__contains__</code>方法，Python会调用<code>__getitem__</code>方法，设法让迭代和in运算符可用。Python中的迭代是鸭子类型的一种极端形式：为了迭代对象，解释器会尝试调用两个不同的方法。</p><h1 id="使用猴子补丁在运行时实现协议">使用猴子补丁在运行时实现协议</h1><p>示例中的FrenchDeck类有个重大缺陷：无法洗牌。如果FrenchDeck实例的行为像序列，那么它就不需要shuffle方法，因为已经有random.shuffle函数可用。如果遵守既定协议，很有可能增加利用现有的标准库和第三方代码的可能性，这得益于鸭子类型。</p><blockquote><p><a href="https://devdocs.io/python~3.6/library/random#random.shuffle" target="_blank" rel="noopener"><code>random.shuffle(x[, random])</code></a></p><p>Shuffle the sequence x in place.</p></blockquote><figure class="highlight python"><figcaption><span>frenchdeck.py</span></figcaption><table><tr><td class="code"><pre><span class="line"><span class="keyword">import</span> collections</span><br><span class="line"></span><br><span class="line">Card = collections.namedtuple(<span class="string">'Card'</span>, [<span class="string">'rank'</span>, <span class="string">'suit'</span>])</span><br><span class="line"></span><br><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">FrenchDeck</span>:</span>  <span class="comment"># 实现序列协议的FrenchDeck类</span></span><br><span class="line">    ranks = [str(n) <span class="keyword">for</span> n <span class="keyword">in</span> range(<span class="number">2</span>, <span class="number">11</span>)] + list(<span class="string">'JQKA'</span>)</span><br><span class="line">    suits = <span class="string">'spades diamonds clubs hearts'</span>.split()</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">__init__</span><span class="params">(self)</span>:</span></span><br><span class="line">        self._cards = [Card(rank, suit) <span class="keyword">for</span> suit <span class="keyword">in</span> self.suits</span><br><span class="line">                       <span class="keyword">for</span> rank <span class="keyword">in</span> self.ranks]</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">__len__</span><span class="params">(self)</span>:</span></span><br><span class="line">        <span class="keyword">return</span> len(self._cards)</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">__getitem__</span><span class="params">(self, item)</span>:</span></span><br><span class="line">        <span class="keyword">return</span> self._cards[item]</span><br></pre></td></tr></table></figure><figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="meta">&gt;&gt;&gt; </span><span class="keyword">from</span> frenchdeck <span class="keyword">import</span> FrenchDeck</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span><span class="keyword">from</span> random <span class="keyword">import</span> shuffle</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>deck = FrenchDeck()</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>shuffle(deck)</span><br><span class="line">Traceback (most recent call last):</span><br><span class="line">  File <span class="string">"&lt;stdin&gt;"</span>, line <span class="number">1</span>, <span class="keyword">in</span> &lt;module&gt;</span><br><span class="line">  File <span class="string">"/Users/cws/opt/anaconda3/envs/python36/lib/python3.6/random.py"</span>, line <span class="number">277</span>, <span class="keyword">in</span> shuffle</span><br><span class="line">    x[i], x[j] = x[j], x[i]</span><br><span class="line">TypeError: <span class="string">'FrenchDeck'</span> object does <span class="keyword">not</span> support item assignment</span><br></pre></td></tr></table></figure><p>然而，如果尝试打乱FrenchDeck实例，会出现异常。错误消息相当明确，对象不支持为元素赋值。FrenchDeck只实现了不可变序列协议，可变的序列还必须提供<code>__setitem__</code>方法。Python是动态语言，因此我们可以在运行时修正这个问题，甚至还可以在交互式控制台中。</p><figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="meta">&gt;&gt;&gt; </span><span class="function"><span class="keyword">def</span> <span class="title">set_card</span><span class="params">(deck, position, card)</span>:</span></span><br><span class="line"><span class="meta">... </span>    deck._cards[position] = card</span><br><span class="line">...</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>FrenchDeck.__setitem__ = set_card</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>shuffle(deck)</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>deck[:<span class="number">5</span>]</span><br><span class="line">[Card(rank=<span class="string">'5'</span>, suit=<span class="string">'spades'</span>), Card(rank=<span class="string">'5'</span>, suit=<span class="string">'clubs'</span>), Card(rank=<span class="string">'Q'</span>, suit=<span class="string">'clubs'</span>), Card(rank=<span class="string">'10'</span>, suit=<span class="string">'clubs'</span>), Card(rank=<span class="string">'5'</span>, suit=<span class="string">'hearts'</span>)]</span><br></pre></td></tr></table></figure><p>特殊方法<code>__setitem__</code>的签名在语言参考中使用的是self、key和value，而这里使用的是deck、position和card。这么做是为了告诉你，每个Python方法说到底都是普通函数，把第一个参数命名为self只是一种约定。在控制台会话中使用那几个参数没问题，不过在Python源码文件中最好按照文档那样使用self、key和value。</p><p>这里的关键是，<code>set_card</code>函数要知道deck对象有一个名为<code>_cards</code>的属性，而且<code>_cards</code>的只必须是可变序列。然后，我们把<code>set_card</code>函数赋值给特殊方法<code>__setitem__</code>，从而把它依附到FrenchDeck类上。这种技术叫猴子补丁：在运行时修改类或模块，而不改动源码。猴子补丁很强大，但是打补丁的代码与要打补丁的程序耦合十分紧密，而且往往要处理隐藏和没有文档的部分。</p><p>除了举例说明猴子补丁之外，示例还强调了协议是动态的：random.shuffle函数不关心参数的类型，只要那个对象实现了部分可变序列协议即可。即便对象一开始没有所需的方法也没关系，后来再提供也行。目前，本章讨论的主题是“鸭子类型”：对象的类型无关紧要，只要实现了特定的协议即可。</p>]]></content>
+      
+      
+      <categories>
+          
+          <category> 笔记 </category>
+          
+      </categories>
+      
+      
+        <tags>
+            
+            <tag> Fluent Python </tag>
+            
+            <tag> protocols </tag>
             
         </tags>
       
@@ -3452,9 +3506,9 @@
             
             <tag> Fluent Python </tag>
             
-            <tag> defaultdict </tag>
-            
             <tag> special methods </tag>
+            
+            <tag> defaultdict </tag>
             
         </tags>
       
@@ -3728,11 +3782,11 @@
       
         <tags>
             
+            <tag> recursion </tag>
+            
             <tag> python </tag>
             
             <tag> iterator </tag>
-            
-            <tag> recursion </tag>
             
         </tags>
       
@@ -3784,13 +3838,13 @@
       
         <tags>
             
-            <tag> algorithms </tag>
-            
-            <tag> stack </tag>
-            
             <tag> recursion </tag>
             
             <tag> Introduction to Algorithms </tag>
+            
+            <tag> algorithms </tag>
+            
+            <tag> stack </tag>
             
             <tag> queue </tag>
             
@@ -3875,11 +3929,11 @@
       
         <tags>
             
-            <tag> algorithms </tag>
-            
             <tag> dynamic programming </tag>
             
             <tag> Introduction to Algorithms </tag>
+            
+            <tag> algorithms </tag>
             
             <tag> divide and conquer </tag>
             
@@ -3906,9 +3960,9 @@
       
         <tags>
             
-            <tag> algorithms </tag>
-            
             <tag> Introduction to Algorithms </tag>
+            
+            <tag> algorithms </tag>
             
             <tag> divide and conquer </tag>
             
@@ -3937,11 +3991,11 @@
       
         <tags>
             
+            <tag> Introduction to Algorithms </tag>
+            
             <tag> algorithms </tag>
             
             <tag> network </tag>
-            
-            <tag> Introduction to Algorithms </tag>
             
         </tags>
       
@@ -3966,11 +4020,11 @@
       
         <tags>
             
+            <tag> linear programming </tag>
+            
             <tag> cplex </tag>
             
             <tag> python </tag>
-            
-            <tag> linear programming </tag>
             
         </tags>
       
@@ -3995,9 +4049,9 @@
       
         <tags>
             
-            <tag> algorithms </tag>
-            
             <tag> Introduction to Algorithms </tag>
+            
+            <tag> algorithms </tag>
             
             <tag> fibonacci heap </tag>
             
@@ -4200,11 +4254,11 @@
       
         <tags>
             
-            <tag> algorithms </tag>
-            
             <tag> sort </tag>
             
             <tag> Introduction to Algorithms </tag>
+            
+            <tag> algorithms </tag>
             
             <tag> comparison sort </tag>
             
@@ -4233,11 +4287,11 @@
       
         <tags>
             
-            <tag> algorithms </tag>
-            
             <tag> sort </tag>
             
             <tag> Introduction to Algorithms </tag>
+            
+            <tag> algorithms </tag>
             
             <tag> comparison sort </tag>
             
@@ -4318,11 +4372,11 @@
       
         <tags>
             
-            <tag> algorithms </tag>
-            
             <tag> sort </tag>
             
             <tag> Introduction to Algorithms </tag>
+            
+            <tag> algorithms </tag>
             
             <tag> non-comparison sort </tag>
             
@@ -4349,11 +4403,11 @@
       
         <tags>
             
-            <tag> algorithms </tag>
-            
             <tag> sort </tag>
             
             <tag> Introduction to Algorithms </tag>
+            
+            <tag> algorithms </tag>
             
             <tag> comparison sort </tag>
             
