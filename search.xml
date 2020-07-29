@@ -4,6 +4,112 @@
   
     
     <entry>
+      <title>幸运数</title>
+      <link href="/programming/lucky-numbers/"/>
+      <url>/programming/lucky-numbers/</url>
+      
+        <content type="html"><![CDATA[<p>求区间 <code>[l, r]</code> 内的幸运数的个数。幸运数定义为，将相邻位上数字差的绝对值拼成下一个数，重复该操作直到只剩 1 位。剩下 7 的是幸运数。例如，<code>219-&gt;18-&gt;7</code> 或者 <code>118-&gt;7</code>。</p><p>条件：<code>1 &lt;= l &lt;= r &lt;= 1e9</code></p><h1 id="解">解</h1><p>先找出小于 <code>1e9</code> 的所有幸运数，再数区间 <code>[l, r]</code> 内幸运数的个数。</p><p>幸运数如何计算？逆向构造。例如 <code>219-&gt;18</code>，反之通过 18 也可以构造出 219 这个幸运数。</p><p>注意 k 位的幸运数不仅可以通过 k-1 位的幸运数计算得到，还可以通过更短的幸运数在前方补 0 后计算得到。例如：7 补成 07，可以计算得到 118, 229, 770, 881, 992。</p><figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">例：求所有的三位数的幸运数使得 ??? -&gt; 18</span><br><span class="line"></span><br><span class="line">1. 确定第 1 位上的数字 a，第一位可取值 1 ... 9。</span><br><span class="line">2. 已知第 1 位，求第 2 位 b，使得 ab -&gt; 1。|a-b|=1，b = 1 ± a。</span><br><span class="line">3. 已知第 2 位，求第 3 位 c，使得 bc -&gt; 8。同理，c = 8 ± b</span><br><span class="line"></span><br><span class="line">具体过程：</span><br><span class="line"></span><br><span class="line">1.  a = 1, 2, ..., 9</span><br><span class="line">                            ab</span><br><span class="line">2.  1b -&gt; 1, b = 1 ± 1      10, 12</span><br><span class="line">    2b -&gt; 1, b = 2 ± 1      21, 23</span><br><span class="line">    ...                     ...</span><br><span class="line">    9b -&gt; 1, b = 9 ± 1      98</span><br><span class="line"></span><br><span class="line">                            abc</span><br><span class="line">3.  0c -&gt; 8,                108</span><br><span class="line">    2c -&gt; 8,</span><br><span class="line">    ...</span><br><span class="line">    8c -&gt; 8,                980</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">例：求所有的三位数的幸运数使得 ??? -&gt; 7</span><br><span class="line"></span><br><span class="line">1. 将 7 视为 07</span><br><span class="line">2. 应用上述步骤</span><br></pre></td></tr></table></figure><a id="more"></a><h1 id="代码">代码</h1><figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">dfs</span><span class="params">(memo, digits, ref, cur)</span>:</span></span><br><span class="line">    <span class="comment"># 寻找幸运数 ? 使得 ? -&gt; ref</span></span><br><span class="line">    n = len(cur)</span><br><span class="line">    <span class="keyword">if</span> n == digits:</span><br><span class="line">        memo[n].append(cur)</span><br><span class="line">    <span class="keyword">elif</span> n == <span class="number">0</span>:</span><br><span class="line">        <span class="keyword">for</span> i <span class="keyword">in</span> <span class="string">'123456789'</span>:</span><br><span class="line">            dfs(memo, digits, ref, i)</span><br><span class="line">    <span class="keyword">else</span>:  <span class="comment"># 已知 a 和 c 求 b，使得 ab -&gt; c</span></span><br><span class="line">        idx = n - (digits - len(ref))</span><br><span class="line">        c = int(ref[idx]) <span class="keyword">if</span> idx &gt;= <span class="number">0</span> <span class="keyword">else</span> <span class="number">0</span></span><br><span class="line">        <span class="keyword">if</span> c == <span class="number">0</span>:  <span class="comment"># b = a</span></span><br><span class="line">            dfs(memo, digits, ref, cur + cur[<span class="number">-1</span>])</span><br><span class="line">        <span class="keyword">else</span>:  <span class="comment"># b = a ± c</span></span><br><span class="line">            a = int(cur[<span class="number">-1</span>])</span><br><span class="line">            <span class="keyword">for</span> b <span class="keyword">in</span> (a + c, a - c):</span><br><span class="line">                <span class="keyword">if</span> <span class="number">0</span> &lt;= b &lt;= <span class="number">9</span>:</span><br><span class="line">                    dfs(memo, digits, ref, cur + str(b))</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">lucky_number</span><span class="params">(max_digits)</span>:</span></span><br><span class="line">    lucky_str = [[] <span class="keyword">for</span> _ <span class="keyword">in</span> range(max_digits + <span class="number">1</span>)]</span><br><span class="line">    lucky_str[<span class="number">1</span>].append(<span class="string">'7'</span>)</span><br><span class="line">    <span class="keyword">for</span> digits <span class="keyword">in</span> range(<span class="number">2</span>, max_digits + <span class="number">1</span>):</span><br><span class="line">        <span class="keyword">for</span> i <span class="keyword">in</span> range(<span class="number">1</span>, digits):</span><br><span class="line">            <span class="keyword">for</span> ref <span class="keyword">in</span> lucky_str[i]:</span><br><span class="line">                dfs(lucky_str, digits, ref, <span class="string">''</span>)</span><br><span class="line"></span><br><span class="line">    lucky_nums = [int(j) <span class="keyword">for</span> i <span class="keyword">in</span> lucky_str <span class="keyword">for</span> j <span class="keyword">in</span> i]</span><br><span class="line">    <span class="keyword">return</span> lucky_nums</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="keyword">import</span> bisect</span><br><span class="line"></span><br><span class="line">lucky_nums = lucky_number(<span class="number">9</span>)</span><br><span class="line">lucky_nums.sort()</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">lucky_number_counter</span><span class="params">(l, r)</span>:</span>  <span class="comment"># 使用二分查找法计算个数</span></span><br><span class="line">    start = bisect.bisect(lucky_nums, l - <span class="number">1</span>)</span><br><span class="line">    end = bisect.bisect(lucky_nums, r)</span><br><span class="line">    <span class="keyword">return</span> end - start</span><br></pre></td></tr></table></figure><p><a href="https://www.nowcoder.com/discuss/455801" target="_blank" rel="noopener">去牛客膜拜大佬 tuogy</a></p>]]></content>
+      
+      
+      <categories>
+          
+          <category> 编程 </category>
+          
+      </categories>
+      
+      
+        <tags>
+            
+            <tag> recursion </tag>
+            
+        </tags>
+      
+    </entry>
+    
+    
+    
+    <entry>
+      <title>整数分解</title>
+      <link href="/programming/integer-decomposition/"/>
+      <url>/programming/integer-decomposition/</url>
+      
+        <content type="html"><![CDATA[<p>给定 <code>N</code> 和 <code>K</code>，求任意一组互不相同的正整数 <code>x, y, z</code> 满足</p><ul><li><code>x + y + z = N</code></li><li><code>gcd(x, y) = gcd(x, y) = gcd(y, z) = K</code></li></ul><p>条件：<code>1 &lt;= N, K &lt;= 1e18</code></p><h1 id="解">解</h1><figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">设 x = aK, y = bK, z = cK</span><br><span class="line">则 a + b + c = N/K</span><br><span class="line"></span><br><span class="line">又有 gcd(x, y) = gcd(x, y) = gcd(y, z) = K</span><br><span class="line">所以 gcd(a, b) = gcd(a, c) = gcd(b, c) = 1</span><br></pre></td></tr></table></figure><p>原题可转化为：给定 <code>M</code>，求任意一组 <code>a, b, c</code> 使得 <code>a + b + c = M</code> 且 <code>a, b, c</code> 互质。</p><p>算法：</p><ol type="1"><li>首先计算 <code>M = N/K</code>，若 <code>M</code> 不是整数，则原题无解。</li><li>若 <code>M</code> 是偶数，则可以构造出一组解 <code>a = 1, b = M/2, c = M/2 - 1</code>。（<code>a, b, c</code> 互不相等，<code>M</code> 最小为 6）</li><li>若 <code>M</code> 是奇数，则不断尝试：固定 <code>a = 1</code>, 则 <code>b + c = M - 1</code> 为偶数，若想 <code>gcd(b, c) = 1</code>，<code>b, c</code> 必须都为奇数。所以，令 <code>b = 3, 5 ... (M-1)/2</code>，计算 <code>gcd(b, c)</code>，若结果为 1，则找到一组满足条件的解。</li></ol><h1 id="代码">代码</h1><figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">gcd</span><span class="params">(a: int, b: int)</span> -&gt; int:</span></span><br><span class="line">    <span class="keyword">while</span> b:</span><br><span class="line">        a, b = b, a % b</span><br><span class="line">    <span class="keyword">return</span> a</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">int_decompose</span><span class="params">(n: int, k: int)</span>:</span></span><br><span class="line">    <span class="keyword">if</span> n % k:</span><br><span class="line">        <span class="keyword">return</span> <span class="literal">None</span></span><br><span class="line">    m = n // k</span><br><span class="line">    <span class="keyword">if</span> m &lt; <span class="number">6</span>:</span><br><span class="line">        <span class="keyword">return</span> <span class="literal">None</span></span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> m % <span class="number">2</span> == <span class="number">0</span>:</span><br><span class="line">        b, c = m // <span class="number">2</span>, m // <span class="number">2</span> - <span class="number">1</span></span><br><span class="line">        <span class="keyword">return</span> k, k * b, k * c</span><br><span class="line">    <span class="keyword">else</span>:</span><br><span class="line">        <span class="keyword">for</span> b <span class="keyword">in</span> range(<span class="number">3</span>, (m - <span class="number">1</span>) // <span class="number">2</span>, <span class="number">2</span>):</span><br><span class="line">            c = m - <span class="number">1</span> - b</span><br><span class="line">            <span class="keyword">if</span> gcd(b, c) == <span class="number">1</span>:</span><br><span class="line">                <span class="keyword">return</span> k, k * b, k * c</span><br><span class="line">        <span class="keyword">return</span> <span class="literal">None</span></span><br></pre></td></tr></table></figure><p><a href="https://www.nowcoder.com/discuss/455801" target="_blank" rel="noopener">去牛客膜拜大佬 tuogy</a></p>]]></content>
+      
+      
+      <categories>
+          
+          <category> 编程 </category>
+          
+      </categories>
+      
+      
+        <tags>
+            
+            <tag> gcd </tag>
+            
+            <tag> prime </tag>
+            
+        </tags>
+      
+    </entry>
+    
+    
+    
+    <entry>
+      <title>最大公约数</title>
+      <link href="/programming/gcd/"/>
+      <url>/programming/gcd/</url>
+      
+        <content type="html"><![CDATA[<p>最大公约数（greatest common divisor，gcd）</p><h1 id="辗转相除法">辗转相除法</h1><p>递归版本：</p><figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">gcd</span><span class="params">(a: int, b: int)</span> -&gt; int:</span></span><br><span class="line">    <span class="keyword">if</span> b == <span class="number">0</span>:</span><br><span class="line">        <span class="keyword">return</span> a          <span class="comment"># gcd(a, 0) = a</span></span><br><span class="line">    <span class="keyword">return</span> gcd(b, a % b)  <span class="comment"># gcd(a, b) = gcd(b, a % b)</span></span><br></pre></td></tr></table></figure><p>迭代版本：</p><figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">gcd</span><span class="params">(a: int, b: int)</span> -&gt; int:</span></span><br><span class="line">    <span class="keyword">while</span> b:</span><br><span class="line">        a, b = b, a % b</span><br><span class="line">    <span class="keyword">return</span> a</span><br></pre></td></tr></table></figure><h1 id="证明">证明</h1><figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">1. 证明 a, b 与 a % b 有共同的约数</span><br><span class="line"></span><br><span class="line">设 gcd(a, b) = y</span><br><span class="line"></span><br><span class="line">则 a, b 可表示为</span><br><span class="line">a = k1 * y</span><br><span class="line">b = k2 * y</span><br><span class="line"></span><br><span class="line">设 floor(a / b) = n</span><br><span class="line">则 a % b = a - n * b</span><br><span class="line">         = (k1 - n * k2) * y</span><br><span class="line">即 y 也是 a % b 的约数</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">2. 证明 gcd(a, b) = gcd(b, a % b)</span><br><span class="line"></span><br><span class="line">欲证明 gcd(a, b) = gcd(k2 * y, (k1 - n * k2) * y) = y</span><br><span class="line">只需证 k2 与 k1 - n * k2 互质</span><br><span class="line">   即 gcd(k2, k1 - n * k2) = 1</span><br><span class="line"></span><br><span class="line">我们已经假设 gcd(a, b) = y</span><br><span class="line">因此 gcd(k1, k2) = 1 是已知条件</span><br><span class="line"></span><br><span class="line">利用反证法</span><br><span class="line">假设 gcd(k2, k1 - n * k2) = z, z &gt; 1</span><br><span class="line"></span><br><span class="line">设</span><br><span class="line">k2 = kk2 * z</span><br><span class="line">k1 = (n * kk2 + 1) * z</span><br><span class="line"></span><br><span class="line">故 gcd(k1, k2) = z</span><br><span class="line"></span><br><span class="line">与已知矛盾假设不成立</span><br></pre></td></tr></table></figure>]]></content>
+      
+      
+      <categories>
+          
+          <category> 编程 </category>
+          
+      </categories>
+      
+      
+        <tags>
+            
+            <tag> recursion </tag>
+            
+            <tag> gcd </tag>
+            
+        </tags>
+      
+    </entry>
+    
+    
+    
+    <entry>
+      <title>Python namedtuple defaults</title>
+      <link href="/programming/python-namedtuple-defaults/"/>
+      <url>/programming/python-namedtuple-defaults/</url>
+      
+        <content type="html"><![CDATA[<p>Python 3.7:</p><p><a href="https://devdocs.io/python~3.7/library/collections#collections.namedtuple" target="_blank" rel="noopener"><code>collections.namedtuple(typename, field_names, *, rename=False, defaults=None, module=None)</code></a></p><p>3.7 版本之后可以通过 defaults 参数指定字段的默认值。同时新增了 <code>_field_defaults</code> 属性来查看默认值。</p><figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="meta">&gt;&gt;&gt; </span>Student = namedtuple(<span class="string">'Student'</span>, <span class="string">'name gender address'</span>, defaults=(<span class="string">''</span>, <span class="number">0</span>, <span class="literal">None</span>))</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>Student()</span><br><span class="line">Student(name=<span class="string">''</span>, gender=<span class="number">0</span>, address=<span class="literal">None</span>)</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>Student._field_defaults</span><br><span class="line">&#123;<span class="string">'name'</span>: <span class="string">''</span>, <span class="string">'gender'</span>: <span class="number">0</span>, <span class="string">'address'</span>: <span class="literal">None</span>&#125;</span><br></pre></td></tr></table></figure><p>Python 3.6:</p><p><a href="https://devdocs.io/python~3.6/library/collections#collections.namedtuple" target="_blank" rel="noopener"><code>collections.namedtuple(typename, field_names, *, verbose=False, rename=False, module=None)</code></a></p><p>3.7 版本之前，修改 <code>somenamedtuple.__new__.__defaults__</code> 设置默认值。</p><figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="meta">&gt;&gt;&gt; </span><span class="keyword">from</span> collections <span class="keyword">import</span> namedtuple</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>Student = namedtuple(<span class="string">'Student'</span>, <span class="string">'name gender address'</span>)</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>Student.__new__.__defaults__ = (<span class="string">''</span>, <span class="number">0</span>, <span class="literal">None</span>)</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>Student()</span><br><span class="line">Student(name=<span class="string">''</span>, gender=<span class="number">0</span>, address=<span class="literal">None</span>)</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>Student.__new__.__defaults__  <span class="comment"># 只能查看到默认值</span></span><br><span class="line">(<span class="string">''</span>, <span class="number">0</span>, <span class="literal">None</span>)</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>dict(zip(Student._fields, Student.__new__.__defaults__))  <span class="comment"># 查看键及对应默认值</span></span><br><span class="line">&#123;<span class="string">'name'</span>: <span class="string">''</span>, <span class="string">'gender'</span>: <span class="number">0</span>, <span class="string">'address'</span>: <span class="literal">None</span>&#125;</span><br></pre></td></tr></table></figure>]]></content>
+      
+      
+      <categories>
+          
+          <category> 编程 </category>
+          
+      </categories>
+      
+      
+        <tags>
+            
+            <tag> python </tag>
+            
+            <tag> namedtuple </tag>
+            
+        </tags>
+      
+    </entry>
+    
+    
+    
+    <entry>
       <title>23. Merge k Sorted Lists</title>
       <link href="/programming/leetcode/merge-k-sorted-lists/"/>
       <url>/programming/leetcode/merge-k-sorted-lists/</url>
@@ -33,7 +139,7 @@
     
     
     <entry>
-      <title>Spiral Matrix</title>
+      <title>54. Spiral Matrix</title>
       <link href="/programming/leetcode/spiral-matrix/"/>
       <url>/programming/leetcode/spiral-matrix/</url>
       
@@ -517,9 +623,9 @@
             
             <tag> leetcode </tag>
             
-            <tag> path </tag>
-            
             <tag> BFS </tag>
+            
+            <tag> path </tag>
             
         </tags>
       
@@ -1223,9 +1329,9 @@
             
             <tag> traversal </tag>
             
-            <tag> hash table </tag>
-            
             <tag> BST </tag>
+            
+            <tag> hash table </tag>
             
         </tags>
       
@@ -2574,9 +2680,9 @@
       
         <tags>
             
-            <tag> stack </tag>
-            
             <tag> recursion </tag>
+            
+            <tag> stack </tag>
             
             <tag> tree </tag>
             
@@ -3972,9 +4078,9 @@
       
         <tags>
             
-            <tag> command </tag>
-            
             <tag> design patterns </tag>
+            
+            <tag> command </tag>
             
             <tag> Fluent Python </tag>
             
@@ -4422,11 +4528,11 @@
       
         <tags>
             
+            <tag> recursion </tag>
+            
             <tag> python </tag>
             
             <tag> iterator </tag>
-            
-            <tag> recursion </tag>
             
         </tags>
       
@@ -4480,11 +4586,11 @@
             
             <tag> Introduction to Algorithms </tag>
             
+            <tag> recursion </tag>
+            
             <tag> algorithms </tag>
             
             <tag> stack </tag>
-            
-            <tag> recursion </tag>
             
             <tag> queue </tag>
             
