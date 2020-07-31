@@ -4,6 +4,114 @@
   
     
     <entry>
+      <title>114. Flatten Binary Tree to Linked List</title>
+      <link href="/programming/leetcode/flatten-binary-tree-to-linked-list/"/>
+      <url>/programming/leetcode/flatten-binary-tree-to-linked-list/</url>
+      
+        <content type="html"><![CDATA[<p>Given a binary tree, flatten it to a linked list in-place.</p><p>For example, given the following tree:</p><figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">    1</span><br><span class="line">   / \</span><br><span class="line">  2   5</span><br><span class="line"> / \   \</span><br><span class="line">3   4   6</span><br></pre></td></tr></table></figure><p>The flattened tree should look like:</p><figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">1</span><br><span class="line"> \</span><br><span class="line">  2</span><br><span class="line">   \</span><br><span class="line">    3</span><br><span class="line">     \</span><br><span class="line">      4</span><br><span class="line">       \</span><br><span class="line">        5</span><br><span class="line">         \</span><br><span class="line">          6</span><br></pre></td></tr></table></figure><h1 id="morris-like">Morris-like</h1><figure class="highlight java"><table><tr><td class="code"><pre><span class="line">    <span class="number">1</span>.      <span class="comment">// cur = root</span></span><br><span class="line">   / \</span><br><span class="line">  <span class="number">2</span>   <span class="number">5</span></span><br><span class="line"> / \   \</span><br><span class="line"><span class="number">3</span>   <span class="number">4</span>   <span class="number">6</span></span><br><span class="line"></span><br><span class="line">    <span class="number">1</span>       <span class="comment">// if cur.left exist:</span></span><br><span class="line">   /        <span class="comment">//     cur.left.rightmost.right = cur.right</span></span><br><span class="line">  <span class="number">2</span>         <span class="comment">//     cur.right = cur.left</span></span><br><span class="line"> / \        <span class="comment">//     cur.left = null</span></span><br><span class="line"><span class="number">3</span>   <span class="number">4</span></span><br><span class="line">     \</span><br><span class="line">      <span class="number">5</span></span><br><span class="line">       \</span><br><span class="line">        <span class="number">6</span></span><br><span class="line"></span><br><span class="line">    <span class="number">1</span>       <span class="comment">// if cur.left not exist:</span></span><br><span class="line">     \      <span class="comment">//     cur = cur.right</span></span><br><span class="line">      <span class="number">2</span>.</span><br><span class="line">     / \</span><br><span class="line">    <span class="number">3</span>   <span class="number">4</span></span><br><span class="line">         \</span><br><span class="line">          <span class="number">5</span></span><br><span class="line">           \</span><br><span class="line">            <span class="number">6</span></span><br><span class="line">...</span><br></pre></td></tr></table></figure><a id="more"></a><figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="comment"># Time: O(n)</span></span><br><span class="line"><span class="comment"># Space: O(1)</span></span><br><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">Solution</span>:</span></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">flatten</span><span class="params">(self, root: TreeNode)</span> -&gt; <span class="keyword">None</span>:</span></span><br><span class="line">        cur = root</span><br><span class="line">        <span class="keyword">while</span> cur:</span><br><span class="line">            <span class="keyword">if</span> cur.left:</span><br><span class="line">                <span class="keyword">if</span> cur.right:</span><br><span class="line">                    rightmost = cur.left</span><br><span class="line">                    <span class="keyword">while</span> rightmost.right:</span><br><span class="line">                        rightmost = rightmost.right</span><br><span class="line">                    rightmost.right = cur.right</span><br><span class="line">                cur.right = cur.left</span><br><span class="line">                cur.left = <span class="literal">None</span></span><br><span class="line">            cur = cur.right</span><br></pre></td></tr></table></figure><h1 id="pre-order-traversal">Pre-order traversal</h1><p>Noticed that flatten order is pre-order. So, we can flatten it during traversal.</p><figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="comment"># Time: O(n)</span></span><br><span class="line"><span class="comment"># Space: O(n)</span></span><br><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">Solution</span>:</span></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">flatten</span><span class="params">(self, root: TreeNode)</span> -&gt; <span class="keyword">None</span>:</span></span><br><span class="line">        <span class="keyword">if</span> <span class="keyword">not</span> root:</span><br><span class="line">            <span class="keyword">return</span></span><br><span class="line">        stack, pre = [root], <span class="literal">None</span></span><br><span class="line">        <span class="keyword">while</span> stack:</span><br><span class="line">            node = stack.pop()</span><br><span class="line"></span><br><span class="line">            <span class="keyword">if</span> pre:  <span class="comment"># modify pointers</span></span><br><span class="line">                pre.right = node</span><br><span class="line">                pre.left = <span class="literal">None</span></span><br><span class="line">            pre = node</span><br><span class="line"></span><br><span class="line">            <span class="keyword">if</span> node.right:</span><br><span class="line">                stack.append(node.right)</span><br><span class="line">            <span class="keyword">if</span> node.left:</span><br><span class="line">                stack.append(node.left)</span><br></pre></td></tr></table></figure><h1 id="recursion">Recursion</h1><figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">Pre order:</span><br><span class="line"></span><br><span class="line"> 1 -&gt; 2 -&gt; 3 ...</span><br><span class="line"> ^    ^</span><br><span class="line">pre  cur</span><br></pre></td></tr></table></figure><p>Pre-order is not usable in recursion, because we modified <code>pre.right</code> before we visit it.</p><figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">Reversed pre order:</span><br><span class="line"></span><br><span class="line"> 6 &lt;- 5 &lt;- 4 ...</span><br><span class="line"> ^    ^</span><br><span class="line">pre  cur</span><br></pre></td></tr></table></figure><p>To avoid it, we can use order <code>right -&gt; left -&gt; node</code>, i.e., visit right, then left, then modify pointers (<code>cur.right, cur.left = pre, None</code>). Since we've visited those pointers before, we can modify them safely.</p><figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="comment"># Time: O(n)</span></span><br><span class="line"><span class="comment"># Space: O(n)</span></span><br><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">Solution</span>:</span></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">flatten</span><span class="params">(self, root: TreeNode)</span> -&gt; <span class="keyword">None</span>:</span></span><br><span class="line">        pre = <span class="literal">None</span></span><br><span class="line"></span><br><span class="line">        <span class="function"><span class="keyword">def</span> <span class="title">helper</span><span class="params">(node)</span>:</span></span><br><span class="line">            <span class="keyword">nonlocal</span> pre</span><br><span class="line">            <span class="keyword">if</span> node:</span><br><span class="line">                helper(node.right)</span><br><span class="line">                helper(node.left)</span><br><span class="line">                node.right = pre</span><br><span class="line">                node.left = <span class="literal">None</span></span><br><span class="line">                pre = node</span><br><span class="line"></span><br><span class="line">        helper(root)</span><br></pre></td></tr></table></figure>]]></content>
+      
+      
+      <categories>
+          
+          <category> 编程 </category>
+          
+      </categories>
+      
+      
+        <tags>
+            
+            <tag> recursion </tag>
+            
+            <tag> binary tree </tag>
+            
+            <tag> leetcode </tag>
+            
+            <tag> traversal </tag>
+            
+        </tags>
+      
+    </entry>
+    
+    
+    
+    <entry>
+      <title>83. Remove Duplicates from Sorted List</title>
+      <link href="/programming/leetcode/remove-duplicates-from-sorted-list/"/>
+      <url>/programming/leetcode/remove-duplicates-from-sorted-list/</url>
+      
+        <content type="html"><![CDATA[<p>Given a sorted linked list, delete all duplicates such that each element appear only once.</p><p>Example 1:</p><figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">Input: 1-&gt;1-&gt;2</span><br><span class="line">Output: 1-&gt;2</span><br></pre></td></tr></table></figure><p>Example 2:</p><figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">Input: 1-&gt;1-&gt;2-&gt;3-&gt;3</span><br><span class="line">Output: 1-&gt;2-&gt;3</span><br></pre></td></tr></table></figure><figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="comment"># Time: O(n)</span></span><br><span class="line"><span class="comment"># Space: O(1)</span></span><br><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">Solution</span>:</span></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">deleteDuplicates</span><span class="params">(self, head: ListNode)</span> -&gt; ListNode:</span></span><br><span class="line">        cur = head</span><br><span class="line">        <span class="keyword">while</span> cur <span class="keyword">and</span> cur.next:</span><br><span class="line">            <span class="keyword">if</span> cur.next.val == cur.val:</span><br><span class="line">                cur.next = cur.next.next</span><br><span class="line">            <span class="keyword">else</span>:</span><br><span class="line">                cur = cur.next</span><br><span class="line">        <span class="keyword">return</span> head</span><br></pre></td></tr></table></figure><h1 id="remove-duplicates-from-sorted-list-ii">82. Remove Duplicates from Sorted List II</h1><p>Given a sorted linked list, delete all nodes that have duplicate numbers, leaving only distinct numbers from the original list.</p><a id="more"></a><p>Return the linked list sorted as well.</p><p>Example 1:</p><figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">Input: 1-&gt;2-&gt;3-&gt;3-&gt;4-&gt;4-&gt;5</span><br><span class="line">Output: 1-&gt;2-&gt;5</span><br></pre></td></tr></table></figure><p>Example 2:</p><figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">Input: 1-&gt;1-&gt;1-&gt;2-&gt;3</span><br><span class="line">Output: 2-&gt;3</span><br></pre></td></tr></table></figure><figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="comment"># Time: O(n)</span></span><br><span class="line"><span class="comment"># Space: O(1)</span></span><br><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">Solution</span>:</span></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">deleteDuplicates</span><span class="params">(self, head: ListNode)</span> -&gt; ListNode:</span></span><br><span class="line">        dummyHead = ListNode(<span class="number">0</span>, head)</span><br><span class="line">        pre, cur = dummyHead, head</span><br><span class="line">        <span class="keyword">while</span> cur:</span><br><span class="line">            <span class="keyword">while</span> cur.next <span class="keyword">and</span> cur.val == cur.next.val:  <span class="comment"># 跳过重复</span></span><br><span class="line">                cur = cur.next</span><br><span class="line">            <span class="keyword">if</span> pre.next == cur:  <span class="comment"># cur 未移动，意味着 cur.val 没有重复</span></span><br><span class="line">                pre = cur        <span class="comment"># 仅移动指针</span></span><br><span class="line">            <span class="keyword">else</span>:                <span class="comment"># cur 移动过，意味着 cur.val 有重复</span></span><br><span class="line">                pre.next = cur.next <span class="comment"># 跳过重复部分</span></span><br><span class="line">            cur = cur.next       <span class="comment"># 当前节点后移</span></span><br><span class="line">        <span class="keyword">return</span> dummyHead.next</span><br></pre></td></tr></table></figure>]]></content>
+      
+      
+      <categories>
+          
+          <category> 编程 </category>
+          
+      </categories>
+      
+      
+        <tags>
+            
+            <tag> leetcode </tag>
+            
+            <tag> linked list </tag>
+            
+        </tags>
+      
+    </entry>
+    
+    
+    
+    <entry>
+      <title>走访客栈</title>
+      <link href="/programming/visiting-hotels/"/>
+      <url>/programming/visiting-hotels/</url>
+      
+        <content type="html"><![CDATA[<p>n 个客栈依次排列，给出 n - 1 条路的权重。可从任意一处出发，每走过一条路，该路的权重减 1，同时得到 1 点利益。不能走权重为 0 的路。求最大利益。</p><h1 id="解">解</h1><p>题目涉及到的图形如一个链表，有 n 个节点和 n-1 条边。第 k 个客栈到第 k+1 个客栈间的权重用 <code>v[k]</code> 表示。假设 <code>L_k</code> 代表由客栈 <code>0, ..., k</code> 所组成的子图，<code>R_k</code> 代笔由客栈 <code>k, ..., n-1</code> 所组成的子图。</p><p>从客栈 k 出发，可获得的最大利益有两种情况：</p><ol type="1"><li>先走访 L_k 中的客栈，回到 k，再走访 R_k 中的客栈</li><li>先走访 R_k 中的客栈，回到 k，再走访 L_k 中的客栈</li></ol><p>定义以下变量：</p><figure class="highlight python"><table><tr><td class="code"><pre><span class="line">f_l[k]  <span class="comment"># 从 k 出发，在 L_k 中获得的最大利益（不在乎终点）</span></span><br><span class="line">f_r[k]  <span class="comment"># 从 k 出发，在 R_k 中获得的最大利益（不在于终点）</span></span><br><span class="line">g_l[k]  <span class="comment"># 从 k 出发，并在 k 结束，在 L_k 中获得的最大利益</span></span><br><span class="line">g_r[k]  <span class="comment"># 从 k 出发，并在 k 结束，在 R_k 中获得的最大利益</span></span><br></pre></td></tr></table></figure><p>利用上述变量，从客栈 k 出发，可获得的最大利益为：</p><figure class="highlight python"><table><tr><td class="code"><pre><span class="line">max(</span><br><span class="line">    g_l[k] + f_r[k],  <span class="comment"># 第一种情况</span></span><br><span class="line">    g_r[k] + f_l[k]   <span class="comment"># 第二种情况</span></span><br><span class="line">)</span><br></pre></td></tr></table></figure><p>如果 <code>v[k - 1]</code> 是奇数，那么</p><figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="comment">// ...h__3__k...</span></span><br><span class="line"></span><br><span class="line"><span class="comment">// v[k - 1] = 1 时，若走到 h，就无法回到 k，因此 g_l[k] = 0</span></span><br><span class="line"><span class="comment">// v[k - 1] &gt; 1 时，因为要回到 k，所以最后一次不能走</span></span><br><span class="line">g_l[k] = (v[k - <span class="number">1</span>] &gt; <span class="number">1</span>) ? (g_l[k - <span class="number">1</span>] + v[k - <span class="number">1</span>] - <span class="number">1</span>) : <span class="number">0</span></span><br><span class="line"><span class="comment">// 首先在 k 和 h 之间反复横跳，耗尽该边的权重，再从 h 出发</span></span><br><span class="line">f_l[k] = f_l[k - <span class="number">1</span>] + v[k - <span class="number">1</span>]</span><br></pre></td></tr></table></figure><p>如果 <code>v[k - 1]</code> 是偶数，那么</p><figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="comment">// ...h__2__k...</span></span><br><span class="line"></span><br><span class="line"><span class="comment">// 首先从 k 走到 h，再从 h 出发并回到 h，最后在 h 和 k 之间反复横跳，耗尽该边的权重</span></span><br><span class="line">g_l[k] = (v[k - <span class="number">1</span>] &gt; <span class="number">0</span>) ? g_l[k - <span class="number">1</span>] + v[k - <span class="number">1</span>] : <span class="number">0</span></span><br><span class="line"><span class="comment">// f_l[k] 分两种情况</span></span><br><span class="line">f_l[k] = max(</span><br><span class="line">    g_l[k],                                           <span class="comment">// 终点是 k</span></span><br><span class="line">    (v[k - <span class="number">1</span>] &gt; <span class="number">0</span>) ? (f_l[k - <span class="number">1</span>] + v[k - <span class="number">1</span>] - <span class="number">1</span>) : <span class="number">0</span>  <span class="comment">// 终点不是 k，最后一次不能走</span></span><br><span class="line">)</span><br></pre></td></tr></table></figure><p>初始时，显然有 <code>f_l[0] = g_l[0] = 0</code>，令 <code>k = 1, ..., n-1</code> 可计算出所有 <code>f_l[k]</code> 和 <code>r_l[k]</code>。</p><p>对 <code>f_r[k]</code> 和 <code>g_r[k]</code> 的计算是完全对称的，只不过按照 <code>k = n-2, ..., 0</code> 逆序计算，初始时有 <code>f_r[n-1] = g_r[n-1] = 0</code>。</p><h1 id="代码">代码</h1><figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">solve</span><span class="params">()</span>:</span></span><br><span class="line">    n = int(input())</span><br><span class="line">    v = list(map(int, input().split()))</span><br><span class="line"></span><br><span class="line">    fl, gl, fr, gr = [<span class="number">0</span>] * n, [<span class="number">0</span>] * n, [<span class="number">0</span>] * n, [<span class="number">0</span>] * n</span><br><span class="line"></span><br><span class="line">    <span class="keyword">for</span> k <span class="keyword">in</span> range(<span class="number">1</span>, n):</span><br><span class="line">        <span class="keyword">if</span> v[k - <span class="number">1</span>] &amp; <span class="number">1</span>:</span><br><span class="line">            fl[k] = fl[k - <span class="number">1</span>] + v[k - <span class="number">1</span>]</span><br><span class="line">            <span class="keyword">if</span> v[k - <span class="number">1</span>] &gt; <span class="number">1</span>:</span><br><span class="line">                gl[k] = gl[k - <span class="number">1</span>] + v[k - <span class="number">1</span>] - <span class="number">1</span></span><br><span class="line">        <span class="keyword">else</span>:</span><br><span class="line">            <span class="keyword">if</span> v[k - <span class="number">1</span>] &gt; <span class="number">0</span>:</span><br><span class="line">                gl[k] = gl[k - <span class="number">1</span>] + v[k - <span class="number">1</span>]</span><br><span class="line">                fl[k] = max(gl[k], fl[k - <span class="number">1</span>] + v[k - <span class="number">1</span>] - <span class="number">1</span>)</span><br><span class="line">            <span class="keyword">else</span>:</span><br><span class="line">                fl[k] = gl[k]</span><br><span class="line"></span><br><span class="line">    <span class="keyword">for</span> k <span class="keyword">in</span> range(n - <span class="number">2</span>, <span class="number">-1</span>, <span class="number">-1</span>):</span><br><span class="line">        <span class="keyword">if</span> v[k] &amp; <span class="number">1</span>:</span><br><span class="line">            fr[k] = fr[k + <span class="number">1</span>] + v[k]</span><br><span class="line">            <span class="keyword">if</span> v[k] &gt; <span class="number">1</span>:</span><br><span class="line">                gr[k] = gr[k + <span class="number">1</span>] + v[k] - <span class="number">1</span></span><br><span class="line">        <span class="keyword">else</span>:</span><br><span class="line">            <span class="keyword">if</span> v[k] &gt; <span class="number">0</span>:</span><br><span class="line">                gr[k] = gr[k + <span class="number">1</span>] + v[k]</span><br><span class="line">                fr[k] = max(gr[k], fr[k + <span class="number">1</span>] + v[k] - <span class="number">1</span>)</span><br><span class="line">            <span class="keyword">else</span>:</span><br><span class="line">                fr[k] = gr[k]</span><br><span class="line"></span><br><span class="line">    ret = <span class="number">0</span></span><br><span class="line">    <span class="keyword">for</span> k <span class="keyword">in</span> range(n):</span><br><span class="line">        ret = max(ret, fl[k] + gr[k], fr[k] + gl[k])</span><br><span class="line"></span><br><span class="line">    <span class="keyword">return</span> ret</span><br></pre></td></tr></table></figure><p><a href="https://www.nowcoder.com/discuss/462000" target="_blank" rel="noopener">围观大神 tuogy</a></p>]]></content>
+      
+      
+      <categories>
+          
+          <category> 编程 </category>
+          
+      </categories>
+      
+      
+        <tags>
+            
+            <tag> dynamic programming </tag>
+            
+        </tags>
+      
+    </entry>
+    
+    
+    
+    <entry>
+      <title>恐龙蛋</title>
+      <link href="/programming/dinosaur-eggs/"/>
+      <url>/programming/dinosaur-eggs/</url>
+      
+        <content type="html"><![CDATA[<p>给定恐龙蛋的个数 n 和大小数组。恐龙蛋的大小各不相同，按从大到小依次排列，第 i 个恐龙蛋每天增大 i，求最少几天后会出现两个同样大小的恐龙蛋。</p><h1 id="解">解</h1><p>相邻的恐龙蛋增长速度相差为 1。因此，如果初始时恐龙蛋大小的差异数组 <code>d = [d1, d2, ..., d{n-1}]</code>，那么每过 1 天，数组 d 中每个元素都会减 1。当 d 中首次出现 0 元素时，就是首次出现两个相同大小恐龙蛋的时候。（<strong>首次出现大小相同的两个蛋一定相邻</strong>）</p><h1 id="代码">代码</h1><figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">solve</span><span class="params">()</span>:</span></span><br><span class="line">    n = int(input())</span><br><span class="line">    sizes = list(map(int, input().split()))</span><br><span class="line">    ret = float(<span class="string">'inf'</span>)</span><br><span class="line">    <span class="keyword">for</span> i <span class="keyword">in</span> range(<span class="number">1</span>, n):</span><br><span class="line">        ret = min(ret, sizes[i] - sizes[i - <span class="number">1</span>])</span><br><span class="line">    <span class="keyword">return</span> ret</span><br></pre></td></tr></table></figure><p><a href="https://www.nowcoder.com/discuss/462000" target="_blank" rel="noopener">围观大神 tuogy</a></p>]]></content>
+      
+      
+      <categories>
+          
+          <category> 编程 </category>
+          
+      </categories>
+      
+      
+        <tags>
+            
+            <tag> dynamic programming </tag>
+            
+        </tags>
+      
+    </entry>
+    
+    
+    
+    <entry>
       <title>41. First Missing Positive</title>
       <link href="/programming/leetcode/first-missing-positive/"/>
       <url>/programming/leetcode/first-missing-positive/</url>
@@ -20,9 +128,9 @@
       
         <tags>
             
-            <tag> hash </tag>
-            
             <tag> leetcode </tag>
+            
+            <tag> hash </tag>
             
         </tags>
       
@@ -62,7 +170,7 @@
       <link href="/programming/lucky-numbers/"/>
       <url>/programming/lucky-numbers/</url>
       
-        <content type="html"><![CDATA[<p>求区间 <code>[l, r]</code> 内的幸运数的个数。幸运数定义为，将相邻位上数字差的绝对值拼成下一个数，重复该操作直到只剩 1 位。剩下 7 的是幸运数。例如，<code>219-&gt;18-&gt;7</code> 或者 <code>118-&gt;7</code>。</p><p>条件：<code>1 &lt;= l &lt;= r &lt;= 1e9</code></p><h1 id="解">解</h1><p>先找出小于 <code>1e9</code> 的所有幸运数，再数区间 <code>[l, r]</code> 内幸运数的个数。</p><p>幸运数如何计算？逆向构造。例如 <code>219-&gt;18</code>，反之通过 18 也可以构造出 219 这个幸运数。</p><p>注意 k 位的幸运数不仅可以通过 k-1 位的幸运数计算得到，还可以通过更短的幸运数在前方补 0 后计算得到。例如：7 补成 07，可以计算得到 118, 229, 770, 881, 992。</p><figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">例：求所有的三位数的幸运数使得 ??? -&gt; 18</span><br><span class="line"></span><br><span class="line">1. 确定第 1 位上的数字 a，第一位可取值 1 ... 9。</span><br><span class="line">2. 已知第 1 位，求第 2 位 b，使得 ab -&gt; 1。|a-b|=1，b = 1 ± a。</span><br><span class="line">3. 已知第 2 位，求第 3 位 c，使得 bc -&gt; 8。同理，c = 8 ± b</span><br><span class="line"></span><br><span class="line">具体过程：</span><br><span class="line"></span><br><span class="line">1.  a = 1, 2, ..., 9</span><br><span class="line">                            ab</span><br><span class="line">2.  1b -&gt; 1, b = 1 ± 1      10, 12</span><br><span class="line">    2b -&gt; 1, b = 2 ± 1      21, 23</span><br><span class="line">    ...                     ...</span><br><span class="line">    9b -&gt; 1, b = 9 ± 1      98</span><br><span class="line"></span><br><span class="line">                            abc</span><br><span class="line">3.  0c -&gt; 8,                108</span><br><span class="line">    2c -&gt; 8,</span><br><span class="line">    ...</span><br><span class="line">    8c -&gt; 8,                980</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">例：求所有的三位数的幸运数使得 ??? -&gt; 7</span><br><span class="line"></span><br><span class="line">1. 将 7 视为 07</span><br><span class="line">2. 应用上述步骤</span><br></pre></td></tr></table></figure><a id="more"></a><h1 id="代码">代码</h1><figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">dfs</span><span class="params">(memo, digits, ref, cur)</span>:</span></span><br><span class="line">    <span class="comment"># 寻找幸运数 ? 使得 ? -&gt; ref</span></span><br><span class="line">    n = len(cur)</span><br><span class="line">    <span class="keyword">if</span> n == digits:</span><br><span class="line">        memo[n].append(cur)</span><br><span class="line">    <span class="keyword">elif</span> n == <span class="number">0</span>:</span><br><span class="line">        <span class="keyword">for</span> i <span class="keyword">in</span> <span class="string">'123456789'</span>:</span><br><span class="line">            dfs(memo, digits, ref, i)</span><br><span class="line">    <span class="keyword">else</span>:  <span class="comment"># 已知 a 和 c 求 b，使得 ab -&gt; c</span></span><br><span class="line">        idx = n - (digits - len(ref))</span><br><span class="line">        c = int(ref[idx]) <span class="keyword">if</span> idx &gt;= <span class="number">0</span> <span class="keyword">else</span> <span class="number">0</span></span><br><span class="line">        <span class="keyword">if</span> c == <span class="number">0</span>:  <span class="comment"># b = a</span></span><br><span class="line">            dfs(memo, digits, ref, cur + cur[<span class="number">-1</span>])</span><br><span class="line">        <span class="keyword">else</span>:  <span class="comment"># b = a ± c</span></span><br><span class="line">            a = int(cur[<span class="number">-1</span>])</span><br><span class="line">            <span class="keyword">for</span> b <span class="keyword">in</span> (a + c, a - c):</span><br><span class="line">                <span class="keyword">if</span> <span class="number">0</span> &lt;= b &lt;= <span class="number">9</span>:</span><br><span class="line">                    dfs(memo, digits, ref, cur + str(b))</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">lucky_number</span><span class="params">(max_digits)</span>:</span></span><br><span class="line">    lucky_str = [[] <span class="keyword">for</span> _ <span class="keyword">in</span> range(max_digits + <span class="number">1</span>)]</span><br><span class="line">    lucky_str[<span class="number">1</span>].append(<span class="string">'7'</span>)</span><br><span class="line">    <span class="keyword">for</span> digits <span class="keyword">in</span> range(<span class="number">2</span>, max_digits + <span class="number">1</span>):</span><br><span class="line">        <span class="keyword">for</span> i <span class="keyword">in</span> range(<span class="number">1</span>, digits):</span><br><span class="line">            <span class="keyword">for</span> ref <span class="keyword">in</span> lucky_str[i]:</span><br><span class="line">                dfs(lucky_str, digits, ref, <span class="string">''</span>)</span><br><span class="line"></span><br><span class="line">    lucky_nums = [int(j) <span class="keyword">for</span> i <span class="keyword">in</span> lucky_str <span class="keyword">for</span> j <span class="keyword">in</span> i]</span><br><span class="line">    <span class="keyword">return</span> lucky_nums</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="keyword">import</span> bisect</span><br><span class="line"></span><br><span class="line">lucky_nums = lucky_number(<span class="number">9</span>)</span><br><span class="line">lucky_nums.sort()</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">lucky_number_counter</span><span class="params">(l, r)</span>:</span>  <span class="comment"># 使用二分查找法计算个数</span></span><br><span class="line">    start = bisect.bisect(lucky_nums, l - <span class="number">1</span>)</span><br><span class="line">    end = bisect.bisect(lucky_nums, r)</span><br><span class="line">    <span class="keyword">return</span> end - start</span><br></pre></td></tr></table></figure><p><a href="https://www.nowcoder.com/discuss/455801" target="_blank" rel="noopener">去牛客膜拜大佬 tuogy</a></p>]]></content>
+        <content type="html"><![CDATA[<p>求区间 <code>[l, r]</code> 内的幸运数的个数。幸运数定义为，将相邻位上数字差的绝对值拼成下一个数，重复该操作直到只剩 1 位。剩下 7 的是幸运数。例如，<code>219-&gt;18-&gt;7</code>，<code>118-&gt;7</code>。</p><p>条件：<code>1 &lt;= l &lt;= r &lt;= 1e9</code></p><h1 id="解">解</h1><p>先找出小于 <code>1e9</code> 的所有幸运数，再数区间 <code>[l, r]</code> 内幸运数的个数。</p><p>幸运数如何计算？逆向构造。例如 <code>219-&gt;18</code>，反之通过 18 也可以构造出 219 这个幸运数。</p><p>注意 k 位的幸运数不仅可以通过 k-1 位的幸运数计算得到，还可以通过更短的幸运数在前方补 0 后计算得到。例如：7 补成 07，可以计算得到 118, 229, 770, 881, 992。</p><figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">例：求所有的三位数的幸运数使得 ??? -&gt; 18</span><br><span class="line"></span><br><span class="line">1. 确定第 1 位上的数字 a，第一位可取值 1 ... 9。</span><br><span class="line">2. 已知第 1 位，求第 2 位 b，使得 ab -&gt; 1。|a-b|=1，b = 1 ± a。</span><br><span class="line">3. 已知第 2 位，求第 3 位 c，使得 bc -&gt; 8。同理，c = 8 ± b</span><br><span class="line"></span><br><span class="line">具体过程：</span><br><span class="line"></span><br><span class="line">1.  a = 1, 2, ..., 9</span><br><span class="line">                            ab</span><br><span class="line">2.  1b -&gt; 1, b = 1 ± 1      10, 12</span><br><span class="line">    2b -&gt; 1, b = 2 ± 1      21, 23</span><br><span class="line">    ...                     ...</span><br><span class="line">    9b -&gt; 1, b = 9 ± 1      98</span><br><span class="line"></span><br><span class="line">                            abc</span><br><span class="line">3.  0c -&gt; 8,                108</span><br><span class="line">    2c -&gt; 8,</span><br><span class="line">    ...</span><br><span class="line">    8c -&gt; 8,                980</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">例：求所有的三位数的幸运数使得 ??? -&gt; 7</span><br><span class="line"></span><br><span class="line">1. 将 7 视为 07</span><br><span class="line">2. 应用上述步骤</span><br></pre></td></tr></table></figure><a id="more"></a><h1 id="代码">代码</h1><figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="keyword">import</span> bisect</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">dfs</span><span class="params">(memo, digits, ref, cur)</span>:</span></span><br><span class="line">    <span class="comment"># 寻找幸运数 ? 使得 ? -&gt; ref</span></span><br><span class="line">    n = len(cur)</span><br><span class="line">    <span class="keyword">if</span> n == digits:</span><br><span class="line">        memo[n].append(cur)</span><br><span class="line">    <span class="keyword">elif</span> n == <span class="number">0</span>:</span><br><span class="line">        <span class="keyword">for</span> i <span class="keyword">in</span> <span class="string">'123456789'</span>:</span><br><span class="line">            dfs(memo, digits, ref, i)</span><br><span class="line">    <span class="keyword">else</span>:  <span class="comment"># 已知 a 和 c 求 b，使得 ab -&gt; c</span></span><br><span class="line">        idx = n - (digits - len(ref))</span><br><span class="line">        c = int(ref[idx]) <span class="keyword">if</span> idx &gt;= <span class="number">0</span> <span class="keyword">else</span> <span class="number">0</span></span><br><span class="line">        <span class="keyword">if</span> c == <span class="number">0</span>:  <span class="comment"># b = a</span></span><br><span class="line">            dfs(memo, digits, ref, cur + cur[<span class="number">-1</span>])</span><br><span class="line">        <span class="keyword">else</span>:  <span class="comment"># b = a ± c</span></span><br><span class="line">            a = int(cur[<span class="number">-1</span>])</span><br><span class="line">            <span class="keyword">for</span> b <span class="keyword">in</span> (a + c, a - c):</span><br><span class="line">                <span class="keyword">if</span> <span class="number">0</span> &lt;= b &lt;= <span class="number">9</span>:</span><br><span class="line">                    dfs(memo, digits, ref, cur + str(b))</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">lucky_number</span><span class="params">(max_digits)</span>:</span></span><br><span class="line">    lucky_str = [[] <span class="keyword">for</span> _ <span class="keyword">in</span> range(max_digits + <span class="number">1</span>)]</span><br><span class="line">    lucky_str[<span class="number">1</span>].append(<span class="string">'7'</span>)</span><br><span class="line">    <span class="keyword">for</span> digits <span class="keyword">in</span> range(<span class="number">2</span>, max_digits + <span class="number">1</span>):</span><br><span class="line">        <span class="keyword">for</span> i <span class="keyword">in</span> range(<span class="number">1</span>, digits):</span><br><span class="line">            <span class="keyword">for</span> ref <span class="keyword">in</span> lucky_str[i]:</span><br><span class="line">                dfs(lucky_str, digits, ref, <span class="string">''</span>)</span><br><span class="line">    lucky_nums = [int(j) <span class="keyword">for</span> i <span class="keyword">in</span> lucky_str <span class="keyword">for</span> j <span class="keyword">in</span> i]</span><br><span class="line">    <span class="keyword">return</span> lucky_nums</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">lucky_number_counter</span><span class="params">(lucky_nums, l, r)</span>:</span></span><br><span class="line">    start = bisect.bisect(lucky_nums, l - <span class="number">1</span>)</span><br><span class="line">    end = bisect.bisect(lucky_nums, r)</span><br><span class="line">    <span class="keyword">return</span> end - start</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">main</span><span class="params">()</span>:</span></span><br><span class="line">    lucky_nums = lucky_number(<span class="number">9</span>)</span><br><span class="line">    lucky_nums.sort()</span><br><span class="line"></span><br><span class="line">    T = int(input())</span><br><span class="line">    <span class="keyword">for</span> _ <span class="keyword">in</span> range(T):</span><br><span class="line">        l, r = map(int, input().split())</span><br><span class="line">        print(lucky_number_counter(lucky_nums, l, r))</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> __name__ == <span class="string">'__main__'</span>:</span><br><span class="line">    main()</span><br></pre></td></tr></table></figure><p><a href="https://www.nowcoder.com/discuss/455801" target="_blank" rel="noopener">去牛客膜拜大佬 tuogy</a></p>]]></content>
       
       
       <categories>
@@ -87,7 +195,7 @@
       <link href="/programming/integer-decomposition/"/>
       <url>/programming/integer-decomposition/</url>
       
-        <content type="html"><![CDATA[<p>给定 <code>N</code> 和 <code>K</code>，求任意一组互不相同的正整数 <code>x, y, z</code> 满足</p><ul><li><code>x + y + z = N</code></li><li><code>gcd(x, y) = gcd(x, y) = gcd(y, z) = K</code></li></ul><p>条件：<code>1 &lt;= N, K &lt;= 1e18</code></p><h1 id="解">解</h1><figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">设 x = aK, y = bK, z = cK</span><br><span class="line">则 a + b + c = N/K</span><br><span class="line"></span><br><span class="line">又有 gcd(x, y) = gcd(x, y) = gcd(y, z) = K</span><br><span class="line">所以 gcd(a, b) = gcd(a, c) = gcd(b, c) = 1</span><br></pre></td></tr></table></figure><p>原题可转化为：给定 <code>M</code>，求任意一组 <code>a, b, c</code> 使得 <code>a + b + c = M</code> 且 <code>a, b, c</code> 互质。</p><p>算法：</p><ol type="1"><li>首先计算 <code>M = N/K</code>，若 <code>M</code> 不是整数，则原题无解。</li><li>若 <code>M</code> 是偶数，则可以构造出一组解 <code>a = 1, b = M/2, c = M/2 - 1</code>。（<code>a, b, c</code> 互不相等，<code>M</code> 最小为 6）</li><li>若 <code>M</code> 是奇数，则不断尝试：固定 <code>a = 1</code>, 则 <code>b + c = M - 1</code> 为偶数，若想 <code>gcd(b, c) = 1</code>，<code>b, c</code> 必须都为奇数。所以，令 <code>b = 3, 5 ... (M-1)/2</code>，计算 <code>gcd(b, c)</code>，若结果为 1，则找到一组满足条件的解。</li></ol><h1 id="代码">代码</h1><figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="keyword">import</span> math</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">int_decompose</span><span class="params">(n: int, k: int)</span>:</span></span><br><span class="line">    <span class="keyword">if</span> n % k:</span><br><span class="line">        <span class="keyword">return</span> <span class="literal">None</span></span><br><span class="line">    m = n // k</span><br><span class="line">    <span class="keyword">if</span> m &lt; <span class="number">6</span>:</span><br><span class="line">        <span class="keyword">return</span> <span class="literal">None</span></span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> m % <span class="number">2</span> == <span class="number">0</span>:</span><br><span class="line">        b, c = m // <span class="number">2</span>, m // <span class="number">2</span> - <span class="number">1</span></span><br><span class="line">        <span class="keyword">return</span> k, k * b, k * c</span><br><span class="line">    <span class="keyword">else</span>:</span><br><span class="line">        <span class="keyword">for</span> b <span class="keyword">in</span> range(<span class="number">3</span>, (m - <span class="number">1</span>) // <span class="number">2</span>, <span class="number">2</span>):</span><br><span class="line">            c = m - <span class="number">1</span> - b</span><br><span class="line">            <span class="keyword">if</span> math.gcd(b, c) == <span class="number">1</span>:</span><br><span class="line">                <span class="keyword">return</span> k, k * b, k * c</span><br><span class="line">        <span class="keyword">return</span> <span class="literal">None</span></span><br></pre></td></tr></table></figure><p><a href="https://www.nowcoder.com/discuss/455801" target="_blank" rel="noopener">去牛客膜拜大佬 tuogy</a></p>]]></content>
+        <content type="html"><![CDATA[<p>给定 <code>N</code> 和 <code>K</code>，求任意一组互不相同的正整数 <code>x, y, z</code> 满足</p><ul><li><code>x + y + z = N</code></li><li><code>gcd(x, y) = gcd(x, y) = gcd(y, z) = K</code></li></ul><h1 id="解">解</h1><figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">设 x = aK, y = bK, z = cK</span><br><span class="line">则 a + b + c = N/K</span><br><span class="line"></span><br><span class="line">又有 gcd(x, y) = gcd(x, y) = gcd(y, z) = K</span><br><span class="line">所以 gcd(a, b) = gcd(a, c) = gcd(b, c) = 1</span><br></pre></td></tr></table></figure><p>原题可转化为：给定 <code>M</code>，求任意一组 <code>a, b, c</code> 使得 <code>a + b + c = M</code> 且 <code>a, b, c</code> 互质。</p><p>算法：</p><ol type="1"><li>首先计算 <code>M = N/K</code>，若 <code>M</code> 不是整数，则原题无解。</li><li>若 <code>M</code> 是偶数，则可以构造出一组解 <code>a = 1, b = M/2, c = M/2 - 1</code>。（<code>a, b, c</code> 互不相等，<code>M</code> 最小为 6）</li><li>若 <code>M</code> 是奇数，则不断尝试：固定 <code>a = 1</code>, 则 <code>b + c = M - 1</code> 为偶数，若想 <code>gcd(b, c) = 1</code>，<code>b, c</code> 必须都为奇数。所以，令 <code>b = 3, 5 ... (M-1)/2</code>，计算 <code>gcd(b, c)</code>，若结果为 1，则找到一组满足条件的解。</li></ol><h1 id="代码">代码</h1><figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="keyword">import</span> math</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">int_decompose</span><span class="params">(n: int, k: int)</span>:</span></span><br><span class="line">    <span class="keyword">if</span> n % k:</span><br><span class="line">        <span class="keyword">return</span> <span class="literal">None</span></span><br><span class="line">    m = n // k</span><br><span class="line">    <span class="keyword">if</span> m &lt; <span class="number">6</span>:</span><br><span class="line">        <span class="keyword">return</span> <span class="literal">None</span></span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> m % <span class="number">2</span> == <span class="number">0</span>:</span><br><span class="line">        b, c = m // <span class="number">2</span>, m // <span class="number">2</span> - <span class="number">1</span></span><br><span class="line">        <span class="keyword">return</span> k, k * b, k * c</span><br><span class="line">    <span class="keyword">else</span>:</span><br><span class="line">        <span class="keyword">for</span> b <span class="keyword">in</span> range(<span class="number">3</span>, (m - <span class="number">1</span>) // <span class="number">2</span>, <span class="number">2</span>):</span><br><span class="line">            c = m - <span class="number">1</span> - b</span><br><span class="line">            <span class="keyword">if</span> math.gcd(b, c) == <span class="number">1</span>:</span><br><span class="line">                <span class="keyword">return</span> k, k * b, k * c</span><br><span class="line">        <span class="keyword">return</span> <span class="literal">None</span></span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">main</span><span class="params">()</span>:</span></span><br><span class="line">    T = int(input())</span><br><span class="line">    <span class="keyword">for</span> _ <span class="keyword">in</span> range(T):</span><br><span class="line">        n, k = map(int, input().split())</span><br><span class="line">        res = int_decompose(n, k)</span><br><span class="line">        print(<span class="string">' '</span>.join(map(str, res)) <span class="keyword">if</span> res <span class="keyword">else</span> <span class="number">-1</span>)</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> __name__ == <span class="string">'__main__'</span>:</span><br><span class="line">    main()</span><br></pre></td></tr></table></figure><p><a href="https://www.nowcoder.com/discuss/455801" target="_blank" rel="noopener">去牛客膜拜大佬 tuogy</a></p>]]></content>
       
       
       <categories>
@@ -126,9 +234,9 @@
       
         <tags>
             
-            <tag> recursion </tag>
-            
             <tag> gcd </tag>
+            
+            <tag> recursion </tag>
             
         </tags>
       
@@ -348,11 +456,11 @@
       
         <tags>
             
-            <tag> hash </tag>
-            
             <tag> dynamic programming </tag>
             
             <tag> leetcode </tag>
+            
+            <tag> hash </tag>
             
         </tags>
       
@@ -433,11 +541,11 @@
       
         <tags>
             
-            <tag> hash </tag>
-            
             <tag> leetcode </tag>
             
             <tag> linked list </tag>
+            
+            <tag> hash </tag>
             
             <tag> two pointers </tag>
             
@@ -520,13 +628,13 @@
       
         <tags>
             
-            <tag> hash </tag>
-            
             <tag> dynamic programming </tag>
             
             <tag> leetcode </tag>
             
             <tag> array </tag>
+            
+            <tag> hash </tag>
             
         </tags>
       
@@ -677,9 +785,9 @@
             
             <tag> leetcode </tag>
             
-            <tag> path </tag>
-            
             <tag> BFS </tag>
+            
+            <tag> path </tag>
             
         </tags>
       
@@ -760,9 +868,9 @@
       
         <tags>
             
-            <tag> hash </tag>
-            
             <tag> leetcode </tag>
+            
+            <tag> hash </tag>
             
             <tag> string </tag>
             
@@ -874,11 +982,11 @@
       
         <tags>
             
-            <tag> hash </tag>
-            
             <tag> leetcode </tag>
             
             <tag> array </tag>
+            
+            <tag> hash </tag>
             
         </tags>
       
@@ -1319,13 +1427,13 @@
       
         <tags>
             
-            <tag> hash </tag>
-            
             <tag> OrderedDict </tag>
             
             <tag> leetcode </tag>
             
             <tag> linked list </tag>
+            
+            <tag> hash </tag>
             
             <tag> LRU </tag>
             
@@ -1377,8 +1485,6 @@
       
         <tags>
             
-            <tag> hash </tag>
-            
             <tag> recursion </tag>
             
             <tag> leetcode </tag>
@@ -1386,6 +1492,8 @@
             <tag> traversal </tag>
             
             <tag> BST </tag>
+            
+            <tag> hash </tag>
             
         </tags>
       
@@ -1563,9 +1671,9 @@
             
             <tag> traversal </tag>
             
-            <tag> morris </tag>
-            
             <tag> inorder </tag>
+            
+            <tag> morris </tag>
             
             <tag> BST </tag>
             
@@ -2746,11 +2854,11 @@
             
             <tag> level order </tag>
             
-            <tag> morris </tag>
-            
             <tag> preorder </tag>
             
             <tag> inorder </tag>
+            
+            <tag> morris </tag>
             
             <tag> postorder </tag>
             
@@ -4192,11 +4300,11 @@
       
         <tags>
             
-            <tag> networkx </tag>
-            
             <tag> algorithms </tag>
             
             <tag> stack </tag>
+            
+            <tag> networkx </tag>
             
         </tags>
       
@@ -4232,33 +4340,6 @@
     
     
     <entry>
-      <title>一等函数</title>
-      <link href="/notes/fluent-python/first-class-functions/"/>
-      <url>/notes/fluent-python/first-class-functions/</url>
-      
-        <content type="html"><![CDATA[<h1 id="把函数试作对象">把函数试作对象</h1><p>在 Python 中，整数、字符串、字典和函数都是一等对象。“一等对象”为满足下述条件的过程实体：</p><ul><li>在运行时创建</li><li>能赋值给变量或数据结构中的元素</li><li>能作为参数传给函数</li><li>能作为函数的返回结果</li></ul><p>人们经常将“把函数视作一等对象”简称为“一等函数”。这样说并不完美，似乎表明这是函数中的特殊群体。在 Python 中，所有函数都是一等对象。</p><a id="more"></a><h1 id="高阶函数">高阶函数</h1><p>接受函数为参数，或者把函数作为结果返回的函数都是高阶函数（higher-order function）。使用高阶函数是函数式编程的特点之一。常见的高阶函数有 <code>max</code>, <code>min</code>, <code>sorted</code>, <code>map</code>, <code>filter</code>, <code>reduce</code>。</p><p><code>max</code>, <code>min</code>, <code>sorted</code> 中的 key 参数接受函数，任何单参数函数都能作为 key 参数的值。例如，想根据单词长度排序时，只需把 len 函数传入。若想创建押韵词典（水果中的各类浆果 *berry 都排在一起），可以把各个单词反过来拼写，然后排序。</p><figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="meta">&gt;&gt;&gt; </span>fruits = [<span class="string">'strawberry'</span>, <span class="string">'fig'</span>, <span class="string">'apple'</span>, <span class="string">'cherry'</span>, <span class="string">'raspberry'</span>, <span class="string">'banana'</span>]</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>sorted(fruits, key=len)</span><br><span class="line">[<span class="string">'fig'</span>, <span class="string">'apple'</span>, <span class="string">'cherry'</span>, <span class="string">'banana'</span>, <span class="string">'raspberry'</span>, <span class="string">'strawberry'</span>]</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>sorted(fruits, key=<span class="keyword">lambda</span> i: i[::<span class="number">-1</span>])</span><br><span class="line">[<span class="string">'banana'</span>, <span class="string">'apple'</span>, <span class="string">'fig'</span>, <span class="string">'raspberry'</span>, <span class="string">'strawberry'</span>, <span class="string">'cherry'</span>]</span><br></pre></td></tr></table></figure><p><code>map</code>, <code>filter</code>, <code>reduce</code> 在多数使用场景下都有更好的替代品。</p><h2 id="mapfilter和reduce的替代品">map、filter和reduce的替代品</h2><p>在 Python3 中，<code>map</code> 和 <code>filter</code> 返回生成器（一种迭代器），因此它们的直接替代品是生成器表达式（在 Python2 中，这两个函数返回列表，因此最接近的替代品是列表推导）。</p><figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="meta">&gt;&gt;&gt; </span><span class="function"><span class="keyword">def</span> <span class="title">fact</span><span class="params">(n)</span>:</span></span><br><span class="line"><span class="meta">... </span>    <span class="string">"""Returns n!"""</span></span><br><span class="line"><span class="meta">... </span>    <span class="keyword">return</span> <span class="number">1</span> <span class="keyword">if</span> n &lt; <span class="number">2</span> <span class="keyword">else</span> n * fact(n - <span class="number">1</span>)</span><br><span class="line">...</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>map(fact, range(<span class="number">6</span>))</span><br><span class="line">&lt;map object at <span class="number">0x10c597f98</span>&gt;</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>(fact(n) <span class="keyword">for</span> n <span class="keyword">in</span> range(<span class="number">6</span>))</span><br><span class="line">&lt;generator object &lt;genexpr&gt; at <span class="number">0x10c58b780</span>&gt;</span><br><span class="line">&gt;&gt;&gt;</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>list(map(fact, range(<span class="number">6</span>)))</span><br><span class="line">[<span class="number">1</span>, <span class="number">1</span>, <span class="number">2</span>, <span class="number">6</span>, <span class="number">24</span>, <span class="number">120</span>]</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>[fact(n) <span class="keyword">for</span> n <span class="keyword">in</span> range(<span class="number">6</span>)]</span><br><span class="line">[<span class="number">1</span>, <span class="number">1</span>, <span class="number">2</span>, <span class="number">6</span>, <span class="number">24</span>, <span class="number">120</span>]</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>list(map(fact, filter(<span class="keyword">lambda</span> n: n % <span class="number">2</span>, range(<span class="number">6</span>))))</span><br><span class="line">[<span class="number">1</span>, <span class="number">6</span>, <span class="number">120</span>]</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>[fact(n) <span class="keyword">for</span> n <span class="keyword">in</span> range(<span class="number">6</span>) <span class="keyword">if</span> n % <span class="number">2</span>]</span><br><span class="line">[<span class="number">1</span>, <span class="number">6</span>, <span class="number">120</span>]</span><br></pre></td></tr></table></figure><p><code>reduce</code> 这个函数最常用于求和，可使用 <code>sum</code> 函数替代，在可读性和性能方面，这是一项重大改善。</p><figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="meta">&gt;&gt;&gt; </span><span class="keyword">from</span> functools <span class="keyword">import</span> reduce</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span><span class="keyword">from</span> operator <span class="keyword">import</span> add</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>reduce(add, range(<span class="number">100</span>))</span><br><span class="line"><span class="number">4950</span></span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>sum(range(<span class="number">100</span>))</span><br><span class="line"><span class="number">4950</span></span><br></pre></td></tr></table></figure><h2 id="归约函数">归约函数</h2><p><code>sum</code> 和 <code>reduce</code> 的通用思想是把某个操作连续应用到序列的元素上，累计之前的结果，把一系列值归约成一个值。<code>all</code> 和 <code>any</code> 也是内置的归约函数。</p><blockquote><p><code>all(iterable)</code></p><p>Return True if all elements of the iterable are true (or if the iterable is empty).</p><p><code>any(iterable)</code></p><p>Return True if any element of the iterable is true. If the iterable is empty, return False.</p></blockquote><h1 id="匿名函数">匿名函数</h1><p>lambda 关键字在 Python 表达式内创建匿名函数。然而，Python 简单的句法限制了 lambda 函数的定义体只能使用纯表达式。换句话说，lambda 函数的定义体中不能赋值，也不能使用 while 和 try 等 Python 语句。</p><p>如果使用 lambda 表达式导致一段代码难以理解，Fredrik Lundh 建议像下面这样重构。</p><p>（1）编写注释，说明 lambda 表达式的作用。</p><p>（2）研究一会注释，并找出一个名称来概括注释。</p><p>（3）把 lambda 表达式转换成def语句，使用那个名称来定义函数。</p><p>（4）删除注释。</p><p>与def语句一样，lambda 表达式会创建函数对象。这是 Python 中几种可调用对象的一种。</p><h1 id="可调用对象">可调用对象</h1><p>除了用户定义的函数，调用运算符，即 <code>()</code>，还可以应用到其他对象上。如果想判断对象能否调用，可以使用内置的 <code>callable</code> 函数。Python 数据模型文档列出了 7 种可调用对象。</p><ul><li>用户定义的函数：使用 def 语句或 lambda 表达式创建。</li><li>内置函数：使用 C 语言（CPython）实现的函数，如 len 或 <code>time.strftime</code>。</li><li>内置方法：使用 C 语言实现的方法，如 <code>dict.get</code>。</li><li>方法：在类的定义体中定义的函数。</li><li>类：调用类时会运行类的 <code>__new__</code> 方法创建一个实例，然后运行 <code>__init__</code> 方法，初始化实例，最后把实例返回给调用方。因为 Python 没有 new 运算符，所以调用类相当于调用函数。</li><li>类的实例：如果类定义了 <code>__call__</code> 方法，那么它的实例可以作为函数调用。</li><li>生成器函数：使用 yield 关键字的函数或方法。调用生成器函数返回的是生成器对象。生成器函数在很多方面与其他可调用对象不同。</li></ul><p>Python 中有各种各样可调用的类型，因此判断对象能否调用，最安全的方法是使用内置的 callable 函数：</p><figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="meta">&gt;&gt;&gt; </span>abs, str, <span class="number">1</span></span><br><span class="line">(&lt;built-in function abs&gt;, &lt;class 'str'&gt;, 1)</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>[callable(obj) <span class="keyword">for</span> obj <span class="keyword">in</span> (abs, str, <span class="number">1</span>)]</span><br><span class="line">[<span class="literal">True</span>, <span class="literal">True</span>, <span class="literal">False</span>]</span><br></pre></td></tr></table></figure><h1 id="函数内省">函数内省</h1><p>函数对象有很多属性。使用 dir 函数可以探知 fact 具有以下属性。</p><figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="meta">&gt;&gt;&gt; </span>dir(fact)</span><br><span class="line">[<span class="string">'__annotations__'</span>, <span class="string">'__call__'</span>, <span class="string">'__class__'</span>, <span class="string">'__closure__'</span>, <span class="string">'__code__'</span>, <span class="string">'__defaults__'</span>, <span class="string">'__delattr__'</span>, <span class="string">'__dict__'</span>, <span class="string">'__dir__'</span>, <span class="string">'__doc__'</span>, <span class="string">'__eq__'</span>, <span class="string">'__format__'</span>, <span class="string">'__ge__'</span>, <span class="string">'__get__'</span>, <span class="string">'__getattribute__'</span>, <span class="string">'__globals__'</span>, <span class="string">'__gt__'</span>, <span class="string">'__hash__'</span>, <span class="string">'__init__'</span>, <span class="string">'__init_subclass__'</span>, <span class="string">'__kwdefaults__'</span>, <span class="string">'__le__'</span>, <span class="string">'__lt__'</span>, <span class="string">'__module__'</span>, <span class="string">'__name__'</span>, <span class="string">'__ne__'</span>, <span class="string">'__new__'</span>, <span class="string">'__qualname__'</span>, <span class="string">'__reduce__'</span>, <span class="string">'__reduce_ex__'</span>, <span class="string">'__repr__'</span>, <span class="string">'__setattr__'</span>, <span class="string">'__sizeof__'</span>, <span class="string">'__str__'</span>, <span class="string">'__subclasshook__'</span>]</span><br></pre></td></tr></table></figure><p>其中大多数属性是 Python 对象共有的。</p><p>与用户定义的常规类一样，函数使用 <code>__dict__</code> 属性存储赋予它的用户属性。一般来说，为函数随意赋予属性不是很常见的做法。</p><p>下面重点说明函数专有而用户定义的一般对象没有的属性。计算两个属性集合的差集便能得到函数专有属性列表。</p><figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="meta">&gt;&gt;&gt; </span><span class="class"><span class="keyword">class</span> <span class="title">C</span>:</span> <span class="keyword">pass</span></span><br><span class="line">...</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>obj = C()</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span><span class="function"><span class="keyword">def</span> <span class="title">func</span><span class="params">()</span>:</span> <span class="keyword">pass</span></span><br><span class="line">...</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>sorted(set(dir(func)) - set(dir(obj)))</span><br><span class="line">[<span class="string">'__annotations__'</span>, <span class="string">'__call__'</span>, <span class="string">'__closure__'</span>, <span class="string">'__code__'</span>, <span class="string">'__defaults__'</span>, <span class="string">'__get__'</span>, <span class="string">'__globals__'</span>, <span class="string">'__kwdefaults__'</span>, <span class="string">'__name__'</span>, <span class="string">'__qualname__'</span>]</span><br></pre></td></tr></table></figure><table><thead><tr class="header"><th>名称</th><th>类型</th><th>说明</th></tr></thead><tbody><tr class="odd"><td><code>__annotations__</code></td><td>dict</td><td>参数和返回值的注解</td></tr><tr class="even"><td><code>__call__</code></td><td>method-wrapper</td><td>实现()运算符：即可调用对象协议</td></tr><tr class="odd"><td><code>__closure__</code></td><td>tuple</td><td>函数闭包，即自由变量的绑定（通常是None）</td></tr><tr class="even"><td><code>__code__</code></td><td>code</td><td>编译成字节码的函数元数据和函数定义体</td></tr><tr class="odd"><td><code>__defaults__</code></td><td>tuple</td><td>形式参数的默认值</td></tr><tr class="even"><td><code>__get__</code></td><td>method-wrapper</td><td>实现只读描述符协议</td></tr><tr class="odd"><td><code>__globals__</code></td><td>dict</td><td>函数所在模块中的全局变量</td></tr><tr class="even"><td><code>__kwdefaults__</code></td><td>dict</td><td>仅限关键字形式参数的默认值</td></tr><tr class="odd"><td><code>__name__</code></td><td>str</td><td>函数名称</td></tr><tr class="even"><td><code>__qualname__</code></td><td>str</td><td>函数的限定名称，如Random.choice（<a href="https://www.python.org/dev/peps/pep-3155/" target="_blank" rel="noopener">参阅PEP 3155</a>）</td></tr></tbody></table>]]></content>
-      
-      
-      <categories>
-          
-          <category> 笔记 </category>
-          
-      </categories>
-      
-      
-        <tags>
-            
-            <tag> Fluent Python </tag>
-            
-            <tag> first-class functions </tag>
-            
-        </tags>
-      
-    </entry>
-    
-    
-    
-    <entry>
       <title>从定位参数到仅限关键字参数</title>
       <link href="/notes/fluent-python/from-positional-to-keyword-only-parameters/"/>
       <url>/notes/fluent-python/from-positional-to-keyword-only-parameters/</url>
@@ -4278,6 +4359,33 @@
             <tag> Fluent Python </tag>
             
             <tag> parameters </tag>
+            
+        </tags>
+      
+    </entry>
+    
+    
+    
+    <entry>
+      <title>一等函数</title>
+      <link href="/notes/fluent-python/first-class-functions/"/>
+      <url>/notes/fluent-python/first-class-functions/</url>
+      
+        <content type="html"><![CDATA[<h1 id="把函数试作对象">把函数试作对象</h1><p>在 Python 中，整数、字符串、字典和函数都是一等对象。“一等对象”为满足下述条件的过程实体：</p><ul><li>在运行时创建</li><li>能赋值给变量或数据结构中的元素</li><li>能作为参数传给函数</li><li>能作为函数的返回结果</li></ul><p>人们经常将“把函数视作一等对象”简称为“一等函数”。这样说并不完美，似乎表明这是函数中的特殊群体。在 Python 中，所有函数都是一等对象。</p><a id="more"></a><h1 id="高阶函数">高阶函数</h1><p>接受函数为参数，或者把函数作为结果返回的函数都是高阶函数（higher-order function）。使用高阶函数是函数式编程的特点之一。常见的高阶函数有 <code>max</code>, <code>min</code>, <code>sorted</code>, <code>map</code>, <code>filter</code>, <code>reduce</code>。</p><p><code>max</code>, <code>min</code>, <code>sorted</code> 中的 key 参数接受函数，任何单参数函数都能作为 key 参数的值。例如，想根据单词长度排序时，只需把 len 函数传入。若想创建押韵词典（水果中的各类浆果 *berry 都排在一起），可以把各个单词反过来拼写，然后排序。</p><figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="meta">&gt;&gt;&gt; </span>fruits = [<span class="string">'strawberry'</span>, <span class="string">'fig'</span>, <span class="string">'apple'</span>, <span class="string">'cherry'</span>, <span class="string">'raspberry'</span>, <span class="string">'banana'</span>]</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>sorted(fruits, key=len)</span><br><span class="line">[<span class="string">'fig'</span>, <span class="string">'apple'</span>, <span class="string">'cherry'</span>, <span class="string">'banana'</span>, <span class="string">'raspberry'</span>, <span class="string">'strawberry'</span>]</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>sorted(fruits, key=<span class="keyword">lambda</span> i: i[::<span class="number">-1</span>])</span><br><span class="line">[<span class="string">'banana'</span>, <span class="string">'apple'</span>, <span class="string">'fig'</span>, <span class="string">'raspberry'</span>, <span class="string">'strawberry'</span>, <span class="string">'cherry'</span>]</span><br></pre></td></tr></table></figure><p><code>map</code>, <code>filter</code>, <code>reduce</code> 在多数使用场景下都有更好的替代品。</p><h2 id="mapfilter和reduce的替代品">map、filter和reduce的替代品</h2><p>在 Python3 中，<code>map</code> 和 <code>filter</code> 返回生成器（一种迭代器），因此它们的直接替代品是生成器表达式（在 Python2 中，这两个函数返回列表，因此最接近的替代品是列表推导）。</p><figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="meta">&gt;&gt;&gt; </span><span class="function"><span class="keyword">def</span> <span class="title">fact</span><span class="params">(n)</span>:</span></span><br><span class="line"><span class="meta">... </span>    <span class="string">"""Returns n!"""</span></span><br><span class="line"><span class="meta">... </span>    <span class="keyword">return</span> <span class="number">1</span> <span class="keyword">if</span> n &lt; <span class="number">2</span> <span class="keyword">else</span> n * fact(n - <span class="number">1</span>)</span><br><span class="line">...</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>map(fact, range(<span class="number">6</span>))</span><br><span class="line">&lt;map object at <span class="number">0x10c597f98</span>&gt;</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>(fact(n) <span class="keyword">for</span> n <span class="keyword">in</span> range(<span class="number">6</span>))</span><br><span class="line">&lt;generator object &lt;genexpr&gt; at <span class="number">0x10c58b780</span>&gt;</span><br><span class="line">&gt;&gt;&gt;</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>list(map(fact, range(<span class="number">6</span>)))</span><br><span class="line">[<span class="number">1</span>, <span class="number">1</span>, <span class="number">2</span>, <span class="number">6</span>, <span class="number">24</span>, <span class="number">120</span>]</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>[fact(n) <span class="keyword">for</span> n <span class="keyword">in</span> range(<span class="number">6</span>)]</span><br><span class="line">[<span class="number">1</span>, <span class="number">1</span>, <span class="number">2</span>, <span class="number">6</span>, <span class="number">24</span>, <span class="number">120</span>]</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>list(map(fact, filter(<span class="keyword">lambda</span> n: n % <span class="number">2</span>, range(<span class="number">6</span>))))</span><br><span class="line">[<span class="number">1</span>, <span class="number">6</span>, <span class="number">120</span>]</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>[fact(n) <span class="keyword">for</span> n <span class="keyword">in</span> range(<span class="number">6</span>) <span class="keyword">if</span> n % <span class="number">2</span>]</span><br><span class="line">[<span class="number">1</span>, <span class="number">6</span>, <span class="number">120</span>]</span><br></pre></td></tr></table></figure><p><code>reduce</code> 这个函数最常用于求和，可使用 <code>sum</code> 函数替代，在可读性和性能方面，这是一项重大改善。</p><figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="meta">&gt;&gt;&gt; </span><span class="keyword">from</span> functools <span class="keyword">import</span> reduce</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span><span class="keyword">from</span> operator <span class="keyword">import</span> add</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>reduce(add, range(<span class="number">100</span>))</span><br><span class="line"><span class="number">4950</span></span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>sum(range(<span class="number">100</span>))</span><br><span class="line"><span class="number">4950</span></span><br></pre></td></tr></table></figure><h2 id="归约函数">归约函数</h2><p><code>sum</code> 和 <code>reduce</code> 的通用思想是把某个操作连续应用到序列的元素上，累计之前的结果，把一系列值归约成一个值。<code>all</code> 和 <code>any</code> 也是内置的归约函数。</p><blockquote><p><code>all(iterable)</code></p><p>Return True if all elements of the iterable are true (or if the iterable is empty).</p><p><code>any(iterable)</code></p><p>Return True if any element of the iterable is true. If the iterable is empty, return False.</p></blockquote><h1 id="匿名函数">匿名函数</h1><p>lambda 关键字在 Python 表达式内创建匿名函数。然而，Python 简单的句法限制了 lambda 函数的定义体只能使用纯表达式。换句话说，lambda 函数的定义体中不能赋值，也不能使用 while 和 try 等 Python 语句。</p><p>如果使用 lambda 表达式导致一段代码难以理解，Fredrik Lundh 建议像下面这样重构。</p><p>（1）编写注释，说明 lambda 表达式的作用。</p><p>（2）研究一会注释，并找出一个名称来概括注释。</p><p>（3）把 lambda 表达式转换成def语句，使用那个名称来定义函数。</p><p>（4）删除注释。</p><p>与def语句一样，lambda 表达式会创建函数对象。这是 Python 中几种可调用对象的一种。</p><h1 id="可调用对象">可调用对象</h1><p>除了用户定义的函数，调用运算符，即 <code>()</code>，还可以应用到其他对象上。如果想判断对象能否调用，可以使用内置的 <code>callable</code> 函数。Python 数据模型文档列出了 7 种可调用对象。</p><ul><li>用户定义的函数：使用 def 语句或 lambda 表达式创建。</li><li>内置函数：使用 C 语言（CPython）实现的函数，如 len 或 <code>time.strftime</code>。</li><li>内置方法：使用 C 语言实现的方法，如 <code>dict.get</code>。</li><li>方法：在类的定义体中定义的函数。</li><li>类：调用类时会运行类的 <code>__new__</code> 方法创建一个实例，然后运行 <code>__init__</code> 方法，初始化实例，最后把实例返回给调用方。因为 Python 没有 new 运算符，所以调用类相当于调用函数。</li><li>类的实例：如果类定义了 <code>__call__</code> 方法，那么它的实例可以作为函数调用。</li><li>生成器函数：使用 yield 关键字的函数或方法。调用生成器函数返回的是生成器对象。生成器函数在很多方面与其他可调用对象不同。</li></ul><p>Python 中有各种各样可调用的类型，因此判断对象能否调用，最安全的方法是使用内置的 callable 函数：</p><figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="meta">&gt;&gt;&gt; </span>abs, str, <span class="number">1</span></span><br><span class="line">(&lt;built-in function abs&gt;, &lt;class 'str'&gt;, 1)</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>[callable(obj) <span class="keyword">for</span> obj <span class="keyword">in</span> (abs, str, <span class="number">1</span>)]</span><br><span class="line">[<span class="literal">True</span>, <span class="literal">True</span>, <span class="literal">False</span>]</span><br></pre></td></tr></table></figure><h1 id="函数内省">函数内省</h1><p>函数对象有很多属性。使用 dir 函数可以探知 fact 具有以下属性。</p><figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="meta">&gt;&gt;&gt; </span>dir(fact)</span><br><span class="line">[<span class="string">'__annotations__'</span>, <span class="string">'__call__'</span>, <span class="string">'__class__'</span>, <span class="string">'__closure__'</span>, <span class="string">'__code__'</span>, <span class="string">'__defaults__'</span>, <span class="string">'__delattr__'</span>, <span class="string">'__dict__'</span>, <span class="string">'__dir__'</span>, <span class="string">'__doc__'</span>, <span class="string">'__eq__'</span>, <span class="string">'__format__'</span>, <span class="string">'__ge__'</span>, <span class="string">'__get__'</span>, <span class="string">'__getattribute__'</span>, <span class="string">'__globals__'</span>, <span class="string">'__gt__'</span>, <span class="string">'__hash__'</span>, <span class="string">'__init__'</span>, <span class="string">'__init_subclass__'</span>, <span class="string">'__kwdefaults__'</span>, <span class="string">'__le__'</span>, <span class="string">'__lt__'</span>, <span class="string">'__module__'</span>, <span class="string">'__name__'</span>, <span class="string">'__ne__'</span>, <span class="string">'__new__'</span>, <span class="string">'__qualname__'</span>, <span class="string">'__reduce__'</span>, <span class="string">'__reduce_ex__'</span>, <span class="string">'__repr__'</span>, <span class="string">'__setattr__'</span>, <span class="string">'__sizeof__'</span>, <span class="string">'__str__'</span>, <span class="string">'__subclasshook__'</span>]</span><br></pre></td></tr></table></figure><p>其中大多数属性是 Python 对象共有的。</p><p>与用户定义的常规类一样，函数使用 <code>__dict__</code> 属性存储赋予它的用户属性。一般来说，为函数随意赋予属性不是很常见的做法。</p><p>下面重点说明函数专有而用户定义的一般对象没有的属性。计算两个属性集合的差集便能得到函数专有属性列表。</p><figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="meta">&gt;&gt;&gt; </span><span class="class"><span class="keyword">class</span> <span class="title">C</span>:</span> <span class="keyword">pass</span></span><br><span class="line">...</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>obj = C()</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span><span class="function"><span class="keyword">def</span> <span class="title">func</span><span class="params">()</span>:</span> <span class="keyword">pass</span></span><br><span class="line">...</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>sorted(set(dir(func)) - set(dir(obj)))</span><br><span class="line">[<span class="string">'__annotations__'</span>, <span class="string">'__call__'</span>, <span class="string">'__closure__'</span>, <span class="string">'__code__'</span>, <span class="string">'__defaults__'</span>, <span class="string">'__get__'</span>, <span class="string">'__globals__'</span>, <span class="string">'__kwdefaults__'</span>, <span class="string">'__name__'</span>, <span class="string">'__qualname__'</span>]</span><br></pre></td></tr></table></figure><table><thead><tr class="header"><th>名称</th><th>类型</th><th>说明</th></tr></thead><tbody><tr class="odd"><td><code>__annotations__</code></td><td>dict</td><td>参数和返回值的注解</td></tr><tr class="even"><td><code>__call__</code></td><td>method-wrapper</td><td>实现()运算符：即可调用对象协议</td></tr><tr class="odd"><td><code>__closure__</code></td><td>tuple</td><td>函数闭包，即自由变量的绑定（通常是None）</td></tr><tr class="even"><td><code>__code__</code></td><td>code</td><td>编译成字节码的函数元数据和函数定义体</td></tr><tr class="odd"><td><code>__defaults__</code></td><td>tuple</td><td>形式参数的默认值</td></tr><tr class="even"><td><code>__get__</code></td><td>method-wrapper</td><td>实现只读描述符协议</td></tr><tr class="odd"><td><code>__globals__</code></td><td>dict</td><td>函数所在模块中的全局变量</td></tr><tr class="even"><td><code>__kwdefaults__</code></td><td>dict</td><td>仅限关键字形式参数的默认值</td></tr><tr class="odd"><td><code>__name__</code></td><td>str</td><td>函数名称</td></tr><tr class="even"><td><code>__qualname__</code></td><td>str</td><td>函数的限定名称，如Random.choice（<a href="https://www.python.org/dev/peps/pep-3155/" target="_blank" rel="noopener">参阅PEP 3155</a>）</td></tr></tbody></table>]]></content>
+      
+      
+      <categories>
+          
+          <category> 笔记 </category>
+          
+      </categories>
+      
+      
+        <tags>
+            
+            <tag> Fluent Python </tag>
+            
+            <tag> first-class functions </tag>
             
         </tags>
       
