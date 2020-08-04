@@ -4,9 +4,84 @@
   
     
     <entry>
+      <title>跳跃表</title>
+      <link href="/notes/the-design-and-implementation-of-redis/skip-list/"/>
+      <url>/notes/the-design-and-implementation-of-redis/skip-list/</url>
+      
+        <content type="html"><![CDATA[<p>跳跃表是一种有序数据结构，它通过在每个节点中维持多个指向其他节点的指针，从而达到快速访问节点的目的。</p><p>跳跃表支持平均 <code>O(logN)</code>、最坏 <code>O(N)</code> 复杂度的节点查找，还可以通过顺序性操作来批量处理节点。</p><p>在大部分情况下，跳跃表的效率可以和平衡树相媲美，并且因为跳跃表的实现比平衡树要来得更为简单，所以有不少程序都使用跳跃表来代替平衡树。</p><p>Redis 使用跳跃表作为有序集合键的底层实现<strong>之一</strong>，如果一个有序集合包含的元素数量比较多，又或者有序集合中元素的成员是比较长的字符串时，Redis 就会使用跳跃表来作为有序集合键的底层实现。</p><h1 id="跳跃表节点">跳跃表节点</h1><figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="keyword">typedef</span> <span class="class"><span class="keyword">struct</span> <span class="title">zskiplistNode</span> &#123;</span></span><br><span class="line">    <span class="class"><span class="keyword">struct</span> <span class="title">zskiplistLevel</span> &#123;</span>                 <span class="comment">// 层</span></span><br><span class="line">        <span class="class"><span class="keyword">struct</span> <span class="title">zskiplistNode</span> *<span class="title">forward</span>;</span>      <span class="comment">// 前进指针</span></span><br><span class="line">        <span class="keyword">unsigned</span> <span class="keyword">int</span> span;                  <span class="comment">// 跨度</span></span><br><span class="line">    &#125; level[];</span><br><span class="line"></span><br><span class="line">    <span class="class"><span class="keyword">struct</span> <span class="title">zskiplistNode</span> *<span class="title">backward</span>;</span>         <span class="comment">// 后退指针</span></span><br><span class="line">    <span class="keyword">double</span> score;                           <span class="comment">// 分值</span></span><br><span class="line">    robj *obj;                              <span class="comment">// 成员对象</span></span><br><span class="line">&#125; zskiplistNode;</span><br></pre></td></tr></table></figure><ol type="1"><li><p>层</p><p>level 数组可以包含多个元素，每个元素都包含一个指向其他节点的指针。一般来说，层的数量越多，访问其他节点的速度就越快。</p><p>每次创建一个新节点的时候，程序都根据<strong>幂次定律</strong>（power law，越大的数出现的概率越小）随机生成一个介于 1 和 32 之间的值作为 level 数组的大小，这个大小就是层的“高度”。</p></li><li><p>前进指针</p><p><strong>每个层</strong>都有一个指向表尾方向的前进指针。</p></li><li><p>跨度</p><p>层的跨度用于记录两个节点之间的距离（最低层 <code>level[0].span = 1</code>），指向 NULL 的所有前进指针的跨度都为 0。</p></li><li><p>后退指针</p><p>每个节点只有一个后退指针，只能后退至前一个节点。</p></li><li><p>分值和成员</p><p>跳跃表中的所有节点都按分值从小到大来排序。</p><p>成员对象是一个指针，指向一个字符串对象，而字符串对象则保存着一个 SDS 值。</p><p><strong>在同一个跳跃表中，各个节点保存的成员对象必须是唯一的，但是多个节点保存的分值却可以是相同的</strong>：分值相同的节点将按照成员对象在字典序中的大小来进行排序。</p></li></ol><h1 id="跳跃表">跳跃表</h1><figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="keyword">typedef</span> <span class="class"><span class="keyword">struct</span> <span class="title">zskiplist</span> &#123;</span></span><br><span class="line">    <span class="class"><span class="keyword">struct</span> <span class="title">zskiplistNode</span> *<span class="title">header</span>, *<span class="title">tail</span>;</span>    <span class="comment">// 表头节点和表尾节点</span></span><br><span class="line">    <span class="keyword">unsigned</span> <span class="keyword">long</span> length;                   <span class="comment">// 节点的数量</span></span><br><span class="line">    <span class="keyword">int</span> level;                              <span class="comment">// 最大层数</span></span><br><span class="line">&#125; zskiplist;</span><br></pre></td></tr></table></figure><p>表头是一个哨兵节点，不保存成员，不计算在 length 之内。</p><p>表头的层高为 32，不参与计算 level。</p>]]></content>
+      
+      
+      <categories>
+          
+          <category> 笔记 </category>
+          
+      </categories>
+      
+      
+        <tags>
+            
+            <tag> Redis 设计与实现 </tag>
+            
+        </tags>
+      
+    </entry>
+    
+    
+    
+    <entry>
+      <title>字典</title>
+      <link href="/notes/the-design-and-implementation-of-redis/dict/"/>
+      <url>/notes/the-design-and-implementation-of-redis/dict/</url>
+      
+        <content type="html"><![CDATA[<h1 id="字典的实现">字典的实现</h1><p>Redis 的字典使用哈希表作为底层实现。</p><figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="keyword">typedef</span> <span class="class"><span class="keyword">struct</span> <span class="title">dictht</span> &#123;</span></span><br><span class="line">    dictEntry **table;          <span class="comment">// 哈希表数组</span></span><br><span class="line">    <span class="keyword">unsigned</span> <span class="keyword">long</span> size;         <span class="comment">// 哈希表大小</span></span><br><span class="line">    <span class="keyword">unsigned</span> <span class="keyword">long</span> sizemask;     <span class="comment">// 哈希表大小掩码，用于计算索引值。总是等于 size-1</span></span><br><span class="line">    <span class="keyword">unsigned</span> <span class="keyword">long</span> used;         <span class="comment">// 哈希表已有节点数量</span></span><br><span class="line">&#125; dictht;</span><br><span class="line"></span><br><span class="line"><span class="keyword">typedef</span> <span class="class"><span class="keyword">struct</span> <span class="title">dictEntry</span> &#123;</span></span><br><span class="line">    <span class="keyword">void</span> *key;          <span class="comment">// 键</span></span><br><span class="line">    <span class="keyword">union</span> &#123;             <span class="comment">// 值</span></span><br><span class="line">        <span class="keyword">void</span> *val;      <span class="comment">// 可以是一个指针</span></span><br><span class="line">        <span class="keyword">uint64_t</span> u64;   <span class="comment">// 或者是一个 uint64_t 整数</span></span><br><span class="line">        <span class="keyword">int64_t</span> s64;    <span class="comment">// 又或者是一个 int64_t 整数</span></span><br><span class="line">    &#125; v;</span><br><span class="line">    <span class="class"><span class="keyword">struct</span> <span class="title">dictEntry</span> *<span class="title">next</span>;</span>     <span class="comment">// 指向下个哈希表节点，以此来解决键冲突的问题</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">typedef</span> <span class="class"><span class="keyword">struct</span> <span class="title">dict</span> &#123;</span></span><br><span class="line">    dictType *type;     <span class="comment">// 类型特定函数，包括计算哈希值、复制/销毁/对比 键/值 的函数</span></span><br><span class="line">    <span class="keyword">void</span> *privdata;     <span class="comment">// 私有数据</span></span><br><span class="line">    dictht ht[<span class="number">2</span>];       <span class="comment">// 哈希表，一般只使用 ht[0], ht[1] 只会在 rehash 时使用</span></span><br><span class="line">    <span class="keyword">int</span> rehashidx;      <span class="comment">// rehash 索引，当 rehash 不在进行时，值为 -1</span></span><br><span class="line">&#125; dict;</span><br></pre></td></tr></table></figure><a id="more"></a><h1 id="哈希算法">哈希算法</h1><figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="comment">// 计算哈希值</span></span><br><span class="line">hash = dict-&gt;type-&gt;hashFunction(key);</span><br><span class="line"></span><br><span class="line"><span class="comment">// 计算索引值</span></span><br><span class="line"><span class="comment">// 根据情况不同，ht[x] 可以是 ht[0] 或者 ht[1]</span></span><br><span class="line">index = hash &amp; dict-&gt;ht[x].sizemask;</span><br></pre></td></tr></table></figure><p>当字典被用作数据库的底层实现，或者哈希键的底层实现时，Redis 使用 MurmurHash2 算法来计算键的哈希值。这种算法的优点在于，即使输入的键是有规律的，算法仍能给出一个很好的随机分布性，并且算法的计算速度也非常快。</p><h1 id="解决键冲突">解决键冲突</h1><p>Redis 的哈希表使用链地址法（separate chaining）来解决键冲突，被分配到同一个索引上的多个节点用 next 指针构成一个单向链表。</p><p>因为没有指向 dictEntry 链表表尾的指针，所以为了速度考虑，程序总是将新节点添加到表头位置。</p><h1 id="rehash">rehash</h1><p>为了让哈希表的负载因子（<code>load_factor = ht[0].used / ht[0].size</code>）维持在一个合理的范围之内，当保存的键值对数量太多或者太少时，程序需要对哈希表的大小进行相应的扩展或者收缩。</p><p>Redis 对字典的哈希表执行 rehash 的步骤：</p><ol type="1"><li>为 <code>ht[1]</code> 哈希表分配空间：<ul><li>如果执行的是扩展操作：<code>ht[1].size</code> 为第一个大于等于 <code>ht[0].used * 2</code> 的 <code>2^n</code>；</li><li>如果执行的是收缩操作：<code>ht[1].size</code> 为第一个大于等于 <code>ht[0].used</code> 的 <code>2^n</code>。</li></ul></li><li>将 <code>ht[0]</code> 中所有键值对 rehash 到 <code>ht[1]</code> 上面。</li><li>释放 <code>ht[0]</code>，将 <code>ht[1]</code> 设置为 <code>ht[0]</code>，并在 <code>ht[1]</code> 新创建一个空白哈希表，为下一次 rehash 做准备。</li></ol><p>何时执行扩展操作：</p><ol type="1"><li>服务器没有在执行 BGSAVE 或者 BGREWRITEAOF，并且负载因子大于等于 1。</li><li>服务器正在执行 BGSAVE 或者 BGREWRITEAOF，并且负载因子大于等于 5。</li></ol><p>在执行 BGSAVE 或者 BGREWRITEAOF 的过程中，Redis 需要创建当前服务器进程的子进程，而大多数操作系统都采用写时复制（copy-on-write）技术来优化子进程的使用效率，所以在子进程存在期间，服务器会提高执行扩展操作所需的负载因子，从而尽可能地避免在子进程存在期间进行哈希表扩展操作，这可以避免不必要的内存写入操作，最大限度地节约内存。</p><p>何时执行收缩操作：</p><ol type="1"><li>负载因子小于 0.1。</li></ol><h1 id="渐进式-rehash">渐进式 rehash</h1><p>rehash 动作并不是一次性、集中式地完成的，而是分多次、渐进式地完成的。如果哈希表里保存的键值非常多，那么要一次性将这些键值对全部 rehash 的话，庞大的计算量可能会导致服务器在一段时间内停止服务。</p><p>渐进式 rehash 的步骤：</p><ol type="1"><li>为 <code>ht[1]</code> 分配空间。</li><li>设置 <code>rehashidx = 0</code>，表示 rehash 工作正式开始。</li><li>在 rehash 期间，每次对字典执行添加、删除、查找或者更新操作时，程序除了执行指定的操作以外，还会顺带将 <code>ht[0]</code> 在 <code>rehashidx</code> 索引上的所有键值对 rehash 到 <code>ht[1]</code> 上，当 rehash 工作完成之后，程序设置 <code>rehashidx += 1</code>。</li><li>随着字典操作的不断执行，最终在某个时间点上，<code>ht[0]</code> 的所有键值对都会被 rehash 到 <code>ht[1]</code>，这时程序设置 <code>rehashidx = -1</code>，表示 rehash 操作已完成。</li></ol><p>因为在进行渐进式 rehash 的过程中，字典会同时使用 <code>ht[0]</code> 和 <code>ht[1]</code> 两个哈希表，所以在渐进式 rehash 进行期间，字典的删除、查找、更新等操作会在两个哈希表上进行。新添加到字典的键值对一律会被保存到 <code>ht[1]</code> 里面，保证了 <code>ht[0]</code> 的键值对数量只减不增。</p>]]></content>
+      
+      
+      <categories>
+          
+          <category> 笔记 </category>
+          
+      </categories>
+      
+      
+        <tags>
+            
+            <tag> Redis 设计与实现 </tag>
+            
+        </tags>
+      
+    </entry>
+    
+    
+    
+    <entry>
+      <title>链表</title>
+      <link href="/notes/the-design-and-implementation-of-redis/linked-list/"/>
+      <url>/notes/the-design-and-implementation-of-redis/linked-list/</url>
+      
+        <content type="html"><![CDATA[<h1 id="链表和链表节点的实现">链表和链表节点的实现</h1><figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="keyword">typedef</span> <span class="class"><span class="keyword">struct</span> <span class="title">listNode</span> &#123;</span></span><br><span class="line">    <span class="class"><span class="keyword">struct</span> <span class="title">listNode</span> *<span class="title">prev</span>;</span>  <span class="comment">// 前置节点</span></span><br><span class="line">    <span class="class"><span class="keyword">struct</span> <span class="title">listNode</span> *<span class="title">next</span>;</span>  <span class="comment">// 后置节点</span></span><br><span class="line">    <span class="keyword">void</span> *value;            <span class="comment">// 节点的值</span></span><br><span class="line">&#125; listNode;</span><br><span class="line"></span><br><span class="line"><span class="keyword">typedef</span> <span class="class"><span class="keyword">struct</span> <span class="title">list</span> &#123;</span></span><br><span class="line">    listNode *head;</span><br><span class="line">    listNode *tail;</span><br><span class="line">    <span class="keyword">unsigned</span> <span class="keyword">long</span> len;</span><br><span class="line">    <span class="keyword">void</span> *(*dup) (<span class="keyword">void</span> *ptr);               <span class="comment">// 节点值复制函数</span></span><br><span class="line">    <span class="keyword">void</span> (*<span class="built_in">free</span>) (<span class="keyword">void</span> *ptr);               <span class="comment">// 节点值释放函数</span></span><br><span class="line">    <span class="keyword">int</span> (*match) (<span class="keyword">void</span> *ptr, <span class="keyword">void</span> *key);    <span class="comment">// 节点值比较函数</span></span><br><span class="line">&#125; <span class="built_in">list</span>;</span><br></pre></td></tr></table></figure><p>Redis 的链表实现的特性总结：</p><ul><li>双端</li><li>无环</li><li>带有头指针和尾指针</li><li>带链表长度计数器</li><li>多态：链表节点使用 <code>void*</code> 指针来保存节点值，并且可以通过 list 结构的 dup、free、match 三个属性为节点值设置类型特定函数，所以链表可以用于保存各种不同类型的值。</li></ul>]]></content>
+      
+      
+      <categories>
+          
+          <category> 笔记 </category>
+          
+      </categories>
+      
+      
+        <tags>
+            
+            <tag> Redis 设计与实现 </tag>
+            
+        </tags>
+      
+    </entry>
+    
+    
+    
+    <entry>
       <title>简单动态字符串</title>
-      <link href="/notes/the-design-and-implementation-of-redis/simple-dynamic-string/"/>
-      <url>/notes/the-design-and-implementation-of-redis/simple-dynamic-string/</url>
+      <link href="/notes/the-design-and-implementation-of-redis/sds/"/>
+      <url>/notes/the-design-and-implementation-of-redis/sds/</url>
       
         <content type="html"><![CDATA[<p>Redis 构建了一种名为简单动态字符串（simple dynamic string，SDS）的抽象类型，并将 SDS 用作 Redis 的默认字符串表示。</p><p>在 Redis 里面，C 字符串只会作为字符串字面量（string literal）用在一些无须对字符串值进行修改的地方，比如打印日志。</p><p>当 Redis 需要的不仅仅是一个字符串字面量，而是一个可以被修改的字符串值时，Redis 就会使用 SDS 来表示字符串值。比如，包含字符串值的键值对在底层都是由 SDS 实现的。</p><figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">127.0.0.1:6379&gt; set msg &apos;hello world&apos;</span><br><span class="line">OK</span><br><span class="line">127.0.0.1:6379&gt; rpush fruits &apos;apple&apos; &apos;banana&apos; &apos;cherry&apos;</span><br><span class="line">(integer) 3</span><br></pre></td></tr></table></figure><p><code>msg, hello world, fruits, apple, banana, cherry</code> 都是由一个 SDS 保存的。</p><p>除了用来保存字符串值之外，SDS 还被用作缓冲区（buffer）：AOF 模块中的 AOF 缓冲区，以及客户端状态中的输入缓冲区，都是由 SDS 实现的。</p><h1 id="sds-的定义">SDS 的定义</h1><figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="class"><span class="keyword">struct</span> <span class="title">sdshdr</span> &#123;</span></span><br><span class="line">    <span class="keyword">int</span> len;     <span class="comment">// 已使用字节的数量</span></span><br><span class="line">    <span class="keyword">int</span> <span class="built_in">free</span>;    <span class="comment">// 未使用字节的数量</span></span><br><span class="line">    <span class="keyword">char</span> buf[];  <span class="comment">// 字节数组，用于保存字符串</span></span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure><p>SDS 遵循 C 字符串以空字符 <code>'\0'</code> 结尾的惯例，保存空字符的 1 字节空间不计算在 len 属性里面。<strong>遵循空字符结尾这一惯例的好处是，SDS 可以直接重用一部分 C 字符串函数库里面的函数。</strong></p><a id="more"></a><h1 id="sds-与-c-字符串的区别">SDS 与 C 字符串的区别</h1><h2 id="常数复杂度获取字符串长度">常数复杂度获取字符串长度</h2><p>C 字符串并不记录自身的长度信息，为了获取长度，必须遍历整个字符串，复杂度为 <code>O(n)</code>。</p><p>SDS 在 len 属性中记录了长度，获取一个 SDS 长度的复杂度仅为 <code>O(1)</code>。</p><h2 id="杜绝缓冲区溢出">杜绝缓冲区溢出</h2><p>C 字符串不记录自身长度带来的另一个问题是容易造成缓冲区溢出（buffer overflow）。举个例子，<code>&lt;string.h&gt;/strcat</code> 函数可以将 src 字符串中的内容拼接到 dest 字符串的末尾：<code>char *strcat(char *dest, const char *src);</code></p><p>假设程序里有两个在内存中<strong>紧邻</strong>的 C 字符串 s1 和 s2，如果一个程序员决定通过执行 <code>strcat(s1, &quot; Cluster&quot;);</code> 修改 s1 的内容，却忘了在执行之前为 s1 分配足够的空间，那么在函数执行之后，s1 的数据将溢出到 s2 所在的空间中，导致 s2 保存的内容被意外地修改。</p><p>SDS 的空间分配策略完全杜绝了发生缓冲区的可能性：当对 SDS 进行修改时，API 会先检查 SDS 的空间是否满足修改所需的要求，如果不满足的话，API 会自动将空间扩展至执行修改所需的大小，然后才执行实际的修改操作。</p><h2 id="减少修改字符串时带来的内存重分配次数">减少修改字符串时带来的内存重分配次数</h2><p>每次增长或者缩短一个 C 字符串，程序都总要对保存这个 C 字符串的数组进行一次内存重分配操作：</p><ul><li>如果执行的是增长字符串的操作，比如拼接（append），那么在执行之前，需要先通过内存重分配来扩展底层数组的空间大小——忘了这一步就会产生<strong>缓冲区溢出</strong>。</li><li>如果执行的是缩短字符串的操作，比如截断（trim），那么在执行之后，需要通过内存重分配来释放字符串不再使用的那部分空间——忘了这一步就会产生<strong>内存泄漏</strong>。</li></ul><p>内存重分配涉及复杂的算法，并且可能需要执行系统调用，所以它通常是一个比较耗时的操作。</p><p>Redis 作为数据库，经常被用于速度要求严苛、数据被频繁修改的场合。</p><p>通过未使用空间，SDS 实现了<strong>空间预分配</strong>和<strong>惰性空间释放</strong>两种优化策略。</p><ol type="1"><li><p>空间预分配</p><p>当需要对 SDS 进行空间扩展时，程序不仅会为 SDS 分配修改所必须要的空间，还会为 SDS 分配额外的未使用空间。</p><ul><li>如果修改之后，SDS 的长度将小于 1MB，那么程序分配和 len 属性同样大小的未使用空间。举个例子，如果进行修改之后，SDS 的 len 将变成 13 字节，那么程序也会分配 13 字节的未使用空间，SDS 的 buf 数组的实际长度将变成 13+13+1=27 字节（额外的一字节用于保存空字符）。</li><li>如果修改之后，SDS 的长度将大于等于 1MB，那么程序会分配 1MB 的未使用空间。</li></ul><p>通过空间预分配策略，Redis 可以减少连续执行字符串增长操作所需的内存重分配次数。</p></li><li><p>惰性空间释放</p><p>当需要缩短 SDS 保存的字符串时，程序并不立即回收缩短后多出来的字节，而是使用 free 属性将这些字节的数量记录起来，并等待将来使用。</p><p>通过惰性空间释放策略，SDS 避免了缩短字符串时所需的内存重分配操作，并未将来可能有的增长操作提供了优化。</p></li></ol><h2 id="二进制安全">二进制安全</h2><p>C 字符串里面不能包含空字符，否则会被误认为是字符串结尾，这个限制使得 C 字符串只能保存文本数据，而不能保存像图片、音频、视频、压缩文件这样的二进制数据。</p><p>SDS 的 API 都是二进制安全的，所有的 SDS API 都会以处理二进制的方式来处理 SDS 存放在 buf 数组里的数据，程序不会对其中的数据做任何限制、过滤或者假设，数据在写入时是什么样的，它被读取时就是什么样。</p><p>使用 SDS 来保存二进制数据就没有任何问题，因为 SDS 使用 len 属性的值来判断字符串是否结束。</p><h2 id="兼容部分-c-字符串函数">兼容部分 C 字符串函数</h2><p>SDS 遵循 C 字符串以空字符结尾的惯例，这是为了让那些保存文本数据的 SDS 可以重用一部分 <code>&lt;string.h&gt;</code> 库定义的函数。</p><h2 id="总结">总结</h2><table><thead><tr class="header"><th>C 字符串</th><th>SDS</th></tr></thead><tbody><tr class="odd"><td>获取长度 <code>O(n)</code></td><td>获取长度 <code>O(1)</code></td></tr><tr class="even"><td>API 是不安全的，可能造成缓冲区溢出</td><td>API 是安全的，不会造成缓冲区溢出</td></tr><tr class="odd"><td>修改长度 n 次需要执行 n 次内存重分配</td><td>修改长度 n 次最多需要执行 n 次内存重分配</td></tr><tr class="even"><td>只能保存文本数据</td><td>可以保存文本或者二进制数据</td></tr><tr class="odd"><td>可以使用 <code>&lt;string.h&gt;</code> 库中的函数</td><td>可以使用一部分 <code>&lt;string.h&gt;</code> 库中的函数</td></tr></tbody></table>]]></content>
       
@@ -33,7 +108,7 @@
       <link href="/programming/leetcode/remove-comments/"/>
       <url>/programming/leetcode/remove-comments/</url>
       
-        <content type="html"><![CDATA[<p>Given a C++ program, remove comments from it. The program <code>source</code> is an array where <code>source[i]</code> is the <code>i</code>-th line of the source code.</p><p>In C++, there are two types of comments, line comments, and block comments.</p><p>The string <code>//</code> denotes a line comment, which represents that it and rest of the characters to the right of it in the same line should be ignored.</p><p>The string <code>/*</code> denotes a block comment, which represents that all characters until the next (non-overlapping) occurrence of <code>*/</code> should be ignored.</p><p>If a certain line of code is empty after removing comments, you must not output that line: each string in the answer list will be non-empty.</p><p>There will be no control characters, single quote, or double quote characters.</p><p>Example 1:</p><figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">Input:</span><br><span class="line">source = [&quot;/*Test program */&quot;,</span><br><span class="line">          &quot;int main()&quot;,</span><br><span class="line">          &quot;&#123; &quot;,</span><br><span class="line">          &quot;  // variable declaration &quot;,</span><br><span class="line">          &quot;int a, b, c;&quot;,</span><br><span class="line">          &quot;/* This is a test&quot;,</span><br><span class="line">          &quot;   multiline  &quot;,</span><br><span class="line">          &quot;   comment for &quot;,</span><br><span class="line">          &quot;   testing */&quot;,</span><br><span class="line">          &quot;a = b + c;&quot;,</span><br><span class="line">          &quot;&#125;&quot;]</span><br><span class="line"></span><br><span class="line">Output: [&quot;int main()&quot;,</span><br><span class="line">         &quot;&#123; &quot;,</span><br><span class="line">         &quot;  &quot;,</span><br><span class="line">         &quot;int a, b, c;&quot;,</span><br><span class="line">         &quot;a = b + c;&quot;,</span><br><span class="line">         &quot;&#125;&quot;]</span><br></pre></td></tr></table></figure><p>Example 2:</p><figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">Input:</span><br><span class="line">source = [&quot;a/*comment&quot;, &quot;line&quot;, &quot;more_comment*/b&quot;]</span><br><span class="line">Output: [&quot;ab&quot;]</span><br></pre></td></tr></table></figure><p>Note:</p><ul><li>The length of <code>source</code> is in the range <code>[1, 100]</code>.</li><li>The length of <code>source[i]</code> is in the range <code>[0, 80]</code>.</li><li>Every open block comment is eventually closed.</li><li>There are no single-quote, double-quote, or control characters in the source code.</li></ul><figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="comment"># Time: O(S), length of all lines in source</span></span><br><span class="line"><span class="comment"># Space: O(S) for ans</span></span><br><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">Solution</span><span class="params">(object)</span>:</span></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">removeComments</span><span class="params">(self, source: [str])</span> -&gt; [str]:</span></span><br><span class="line">        in_block = <span class="literal">False</span></span><br><span class="line">        ans = []</span><br><span class="line">        <span class="keyword">for</span> line <span class="keyword">in</span> source:</span><br><span class="line">            i = <span class="number">0</span></span><br><span class="line">            <span class="keyword">if</span> <span class="keyword">not</span> in_block:                   <span class="comment"># begin a new line</span></span><br><span class="line">                newline = []</span><br><span class="line">            <span class="keyword">while</span> i &lt; len(line):</span><br><span class="line">                <span class="keyword">if</span> in_block:</span><br><span class="line">                    <span class="keyword">if</span> line[i:i+<span class="number">2</span>] == <span class="string">'*/'</span>:    <span class="comment"># end block comment</span></span><br><span class="line">                        in_block = <span class="literal">False</span></span><br><span class="line">                        i += <span class="number">2</span></span><br><span class="line">                <span class="keyword">else</span>:</span><br><span class="line">                    <span class="keyword">if</span> line[i:i+<span class="number">2</span>] == <span class="string">'/*'</span>:    <span class="comment"># begin block comment</span></span><br><span class="line">                        in_block = <span class="literal">True</span></span><br><span class="line">                        i += <span class="number">2</span></span><br><span class="line">                    <span class="keyword">elif</span> line[i:i+<span class="number">2</span>] == <span class="string">'//'</span>:  <span class="comment"># begin line comment</span></span><br><span class="line">                        <span class="keyword">break</span></span><br><span class="line">                    <span class="keyword">else</span>:</span><br><span class="line">                        newline.append(line[i])</span><br><span class="line">                        i += <span class="number">1</span></span><br><span class="line">            <span class="keyword">if</span> newline <span class="keyword">and</span> <span class="keyword">not</span> in_block:</span><br><span class="line">                ans.append(<span class="string">""</span>.join(newline))   <span class="comment"># end this line</span></span><br><span class="line"></span><br><span class="line">        <span class="keyword">return</span> ans</span><br></pre></td></tr></table></figure>]]></content>
+        <content type="html"><![CDATA[<p>Given a C++ program, remove comments from it. The program <code>source</code> is an array where <code>source[i]</code> is the <code>i</code>-th line of the source code.</p><p>In C++, there are two types of comments, line comments, and block comments.</p><p>The string <code>//</code> denotes a line comment, which represents that it and rest of the characters to the right of it in the same line should be ignored.</p><p>The string <code>/*</code> denotes a block comment, which represents that all characters until the next (non-overlapping) occurrence of <code>*/</code> should be ignored.</p><p>If a certain line of code is empty after removing comments, you must not output that line: each string in the answer list will be non-empty.</p><p>There will be no control characters, single quote, or double quote characters.</p><p>Example 1:</p><figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">Input:</span><br><span class="line">source = [&quot;/*Test program */&quot;,</span><br><span class="line">          &quot;int main()&quot;,</span><br><span class="line">          &quot;&#123; &quot;,</span><br><span class="line">          &quot;  // variable declaration &quot;,</span><br><span class="line">          &quot;int a, b, c;&quot;,</span><br><span class="line">          &quot;/* This is a test&quot;,</span><br><span class="line">          &quot;   multiline  &quot;,</span><br><span class="line">          &quot;   comment for &quot;,</span><br><span class="line">          &quot;   testing */&quot;,</span><br><span class="line">          &quot;a = b + c;&quot;,</span><br><span class="line">          &quot;&#125;&quot;]</span><br><span class="line"></span><br><span class="line">Output: [&quot;int main()&quot;,</span><br><span class="line">         &quot;&#123; &quot;,</span><br><span class="line">         &quot;  &quot;,</span><br><span class="line">         &quot;int a, b, c;&quot;,</span><br><span class="line">         &quot;a = b + c;&quot;,</span><br><span class="line">         &quot;&#125;&quot;]</span><br></pre></td></tr></table></figure><p>Example 2:</p><figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">Input:</span><br><span class="line">source = [&quot;a/*comment&quot;, &quot;line&quot;, &quot;more_comment*/b&quot;]</span><br><span class="line">Output: [&quot;ab&quot;]</span><br></pre></td></tr></table></figure><p>Note:</p><ul><li>The length of <code>source</code> is in the range <code>[1, 100]</code>.</li><li>The length of <code>source[i]</code> is in the range <code>[0, 80]</code>.</li><li>Every open block comment is eventually closed.</li><li>There are no single-quote, double-quote, or control characters in the source code.</li></ul><figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="comment"># Time: O(S), length of all lines in source</span></span><br><span class="line"><span class="comment"># Space: O(S) for ans</span></span><br><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">Solution</span><span class="params">(object)</span>:</span></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">removeComments</span><span class="params">(self, source: [str])</span> -&gt; [str]:</span></span><br><span class="line">        in_block = <span class="literal">False</span></span><br><span class="line">        ans = []</span><br><span class="line">        <span class="keyword">for</span> line <span class="keyword">in</span> source:</span><br><span class="line">            i = <span class="number">0</span></span><br><span class="line">            <span class="keyword">if</span> <span class="keyword">not</span> in_block:                   <span class="comment"># begin a new line</span></span><br><span class="line">                newline = []</span><br><span class="line">            <span class="keyword">while</span> i &lt; len(line):</span><br><span class="line">                <span class="keyword">if</span> in_block:</span><br><span class="line">                    <span class="keyword">if</span> line[i:i+<span class="number">2</span>] == <span class="string">'*/'</span>:    <span class="comment"># end block comment</span></span><br><span class="line">                        in_block = <span class="literal">False</span></span><br><span class="line">                        i += <span class="number">2</span></span><br><span class="line">                    <span class="keyword">else</span>:</span><br><span class="line">                        i += <span class="number">1</span></span><br><span class="line">                <span class="keyword">else</span>:</span><br><span class="line">                    <span class="keyword">if</span> line[i:i+<span class="number">2</span>] == <span class="string">'/*'</span>:    <span class="comment"># begin block comment</span></span><br><span class="line">                        in_block = <span class="literal">True</span></span><br><span class="line">                        i += <span class="number">2</span></span><br><span class="line">                    <span class="keyword">elif</span> line[i:i+<span class="number">2</span>] == <span class="string">'//'</span>:  <span class="comment"># begin line comment</span></span><br><span class="line">                        <span class="keyword">break</span></span><br><span class="line">                    <span class="keyword">else</span>:</span><br><span class="line">                        newline.append(line[i])</span><br><span class="line">                        i += <span class="number">1</span></span><br><span class="line">            <span class="keyword">if</span> newline <span class="keyword">and</span> <span class="keyword">not</span> in_block:</span><br><span class="line">                ans.append(<span class="string">""</span>.join(newline))   <span class="comment"># end this line</span></span><br><span class="line"></span><br><span class="line">        <span class="keyword">return</span> ans</span><br></pre></td></tr></table></figure>]]></content>
       
       
       <categories>
@@ -124,13 +199,13 @@
       
         <tags>
             
-            <tag> recursion </tag>
+            <tag> 递归 </tag>
             
-            <tag> binary tree </tag>
+            <tag> 二叉树 </tag>
             
             <tag> leetcode </tag>
             
-            <tag> traversal </tag>
+            <tag> 遍历 </tag>
             
         </tags>
       
@@ -157,7 +232,7 @@
             
             <tag> leetcode </tag>
             
-            <tag> linked list </tag>
+            <tag> 链表 </tag>
             
         </tags>
       
@@ -182,7 +257,7 @@
       
         <tags>
             
-            <tag> dynamic programming </tag>
+            <tag> 动态规划 </tag>
             
         </tags>
       
@@ -207,7 +282,7 @@
       
         <tags>
             
-            <tag> dynamic programming </tag>
+            <tag> 动态规划 </tag>
             
         </tags>
       
@@ -286,7 +361,7 @@
       
         <tags>
             
-            <tag> recursion </tag>
+            <tag> 递归 </tag>
             
         </tags>
       
@@ -338,7 +413,7 @@
       
         <tags>
             
-            <tag> recursion </tag>
+            <tag> 递归 </tag>
             
             <tag> gcd </tag>
             
@@ -349,11 +424,11 @@
     
     
     <entry>
-      <title>Python namedtuple defaults</title>
-      <link href="/programming/python-namedtuple-defaults/"/>
-      <url>/programming/python-namedtuple-defaults/</url>
+      <title>namedtuple</title>
+      <link href="/programming/namedtuple/"/>
+      <url>/programming/namedtuple/</url>
       
-        <content type="html"><![CDATA[<p>Python 3.7:</p><p><a href="https://devdocs.io/python~3.7/library/collections#collections.namedtuple" target="_blank" rel="noopener"><code>collections.namedtuple(typename, field_names, *, rename=False, defaults=None, module=None)</code></a></p><p>3.7 版本之后可以通过 defaults 参数指定字段的默认值。同时新增了 <code>_field_defaults</code> 属性来查看默认值。</p><figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="meta">&gt;&gt;&gt; </span>Student = namedtuple(<span class="string">'Student'</span>, <span class="string">'name gender address'</span>, defaults=(<span class="string">''</span>, <span class="number">0</span>, <span class="literal">None</span>))</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>Student()</span><br><span class="line">Student(name=<span class="string">''</span>, gender=<span class="number">0</span>, address=<span class="literal">None</span>)</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>Student._field_defaults</span><br><span class="line">&#123;<span class="string">'name'</span>: <span class="string">''</span>, <span class="string">'gender'</span>: <span class="number">0</span>, <span class="string">'address'</span>: <span class="literal">None</span>&#125;</span><br></pre></td></tr></table></figure><p>Python 3.6:</p><p><a href="https://devdocs.io/python~3.6/library/collections#collections.namedtuple" target="_blank" rel="noopener"><code>collections.namedtuple(typename, field_names, *, verbose=False, rename=False, module=None)</code></a></p><p>3.7 版本之前，修改 <code>somenamedtuple.__new__.__defaults__</code> 设置默认值。</p><figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="meta">&gt;&gt;&gt; </span><span class="keyword">from</span> collections <span class="keyword">import</span> namedtuple</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>Student = namedtuple(<span class="string">'Student'</span>, <span class="string">'name gender address'</span>)</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>Student.__new__.__defaults__ = (<span class="string">''</span>, <span class="number">0</span>, <span class="literal">None</span>)</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>Student()</span><br><span class="line">Student(name=<span class="string">''</span>, gender=<span class="number">0</span>, address=<span class="literal">None</span>)</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>Student.__new__.__defaults__  <span class="comment"># 只能查看到默认值</span></span><br><span class="line">(<span class="string">''</span>, <span class="number">0</span>, <span class="literal">None</span>)</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>dict(zip(Student._fields, Student.__new__.__defaults__))  <span class="comment"># 查看键及对应默认值</span></span><br><span class="line">&#123;<span class="string">'name'</span>: <span class="string">''</span>, <span class="string">'gender'</span>: <span class="number">0</span>, <span class="string">'address'</span>: <span class="literal">None</span>&#125;</span><br></pre></td></tr></table></figure>]]></content>
+        <content type="html"><![CDATA[<h1 id="设置默认值">设置默认值</h1><blockquote><p>Python 3.7</p><p><a href="https://devdocs.io/python~3.7/library/collections#collections.namedtuple" target="_blank" rel="noopener"><code>collections.namedtuple(typename, field_names, *, rename=False, defaults=None, module=None)</code></a></p></blockquote><p>3.7 版本之后可以通过 defaults 参数指定字段的默认值。同时新增了 <code>_field_defaults</code> 属性来查看默认值。</p><figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="meta">&gt;&gt;&gt; </span>Student = namedtuple(<span class="string">'Student'</span>, <span class="string">'name gender address'</span>, defaults=(<span class="string">''</span>, <span class="number">0</span>, <span class="literal">None</span>))</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>Student()</span><br><span class="line">Student(name=<span class="string">''</span>, gender=<span class="number">0</span>, address=<span class="literal">None</span>)</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>Student._field_defaults</span><br><span class="line">&#123;<span class="string">'name'</span>: <span class="string">''</span>, <span class="string">'gender'</span>: <span class="number">0</span>, <span class="string">'address'</span>: <span class="literal">None</span>&#125;</span><br></pre></td></tr></table></figure><blockquote><p>Python 3.6</p><p><a href="https://devdocs.io/python~3.6/library/collections#collections.namedtuple" target="_blank" rel="noopener"><code>collections.namedtuple(typename, field_names, *, verbose=False, rename=False, module=None)</code></a></p></blockquote><p>3.7 版本之前，可通过修改 <code>somenamedtuple.__new__.__defaults__</code> 的方式设置默认值。</p><figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="meta">&gt;&gt;&gt; </span><span class="keyword">from</span> collections <span class="keyword">import</span> namedtuple</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>Student = namedtuple(<span class="string">'Student'</span>, <span class="string">'name gender address'</span>)</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>Student.__new__.__defaults__ = (<span class="string">''</span>, <span class="number">0</span>, <span class="literal">None</span>)</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>Student()</span><br><span class="line">Student(name=<span class="string">''</span>, gender=<span class="number">0</span>, address=<span class="literal">None</span>)</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>Student.__new__.__defaults__  <span class="comment"># 只能查看到默认值</span></span><br><span class="line">(<span class="string">''</span>, <span class="number">0</span>, <span class="literal">None</span>)</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>dict(zip(Student._fields, Student.__new__.__defaults__))  <span class="comment"># 查看键及对应默认值</span></span><br><span class="line">&#123;<span class="string">'name'</span>: <span class="string">''</span>, <span class="string">'gender'</span>: <span class="number">0</span>, <span class="string">'address'</span>: <span class="literal">None</span>&#125;</span><br></pre></td></tr></table></figure>]]></content>
       
       
       <categories>
@@ -365,7 +440,7 @@
       
         <tags>
             
-            <tag> python </tag>
+            <tag> Python </tag>
             
             <tag> namedtuple </tag>
             
@@ -392,7 +467,7 @@
       
         <tags>
             
-            <tag> divide and conquer </tag>
+            <tag> 分治法 </tag>
             
             <tag> leetcode </tag>
             
@@ -450,7 +525,7 @@
             
             <tag> leetcode </tag>
             
-            <tag> linked list </tag>
+            <tag> 链表 </tag>
             
             <tag> reverse </tag>
             
@@ -506,7 +581,7 @@
             
             <tag> leetcode </tag>
             
-            <tag> binary search </tag>
+            <tag> 二分查找 </tag>
             
         </tags>
       
@@ -533,7 +608,7 @@
             
             <tag> MySQL </tag>
             
-            <tag> Inside MySQL </tag>
+            <tag> MySQL 技术内幕 </tag>
             
             <tag> transaction </tag>
             
@@ -560,7 +635,7 @@
       
         <tags>
             
-            <tag> dynamic programming </tag>
+            <tag> 动态规划 </tag>
             
             <tag> leetcode </tag>
             
@@ -591,7 +666,7 @@
             
             <tag> leetcode </tag>
             
-            <tag> linked list </tag>
+            <tag> 链表 </tag>
             
         </tags>
       
@@ -618,7 +693,7 @@
             
             <tag> leetcode </tag>
             
-            <tag> linked list </tag>
+            <tag> 链表 </tag>
             
             <tag> palindrome </tag>
             
@@ -647,7 +722,7 @@
             
             <tag> leetcode </tag>
             
-            <tag> linked list </tag>
+            <tag> 链表 </tag>
             
             <tag> hash </tag>
             
@@ -678,7 +753,7 @@
             
             <tag> leetcode </tag>
             
-            <tag> linked list </tag>
+            <tag> 链表 </tag>
             
         </tags>
       
@@ -732,7 +807,7 @@
       
         <tags>
             
-            <tag> dynamic programming </tag>
+            <tag> 动态规划 </tag>
             
             <tag> array </tag>
             
@@ -765,7 +840,7 @@
             
             <tag> MySQL </tag>
             
-            <tag> Inside MySQL </tag>
+            <tag> MySQL 技术内幕 </tag>
             
             <tag> index </tag>
             
@@ -794,9 +869,7 @@
             
             <tag> MySQL </tag>
             
-            <tag> Inside MySQL </tag>
-            
-            <tag> High Performance MySQL </tag>
+            <tag> MySQL 技术内幕 </tag>
             
             <tag> lock </tag>
             
@@ -825,7 +898,7 @@
             
             <tag> leetcode </tag>
             
-            <tag> linked list </tag>
+            <tag> 链表 </tag>
             
             <tag> reverse </tag>
             
@@ -856,7 +929,7 @@
             
             <tag> leetcode </tag>
             
-            <tag> binary search </tag>
+            <tag> 二分查找 </tag>
             
         </tags>
       
@@ -881,11 +954,11 @@
       
         <tags>
             
+            <tag> 递归 </tag>
+            
             <tag> DFS </tag>
             
-            <tag> recursion </tag>
-            
-            <tag> binary tree </tag>
+            <tag> 二叉树 </tag>
             
             <tag> leetcode </tag>
             
@@ -916,7 +989,7 @@
       
         <tags>
             
-            <tag> binary tree </tag>
+            <tag> 二叉树 </tag>
             
             <tag> leetcode </tag>
             
@@ -1001,9 +1074,9 @@
       
         <tags>
             
-            <tag> recursion </tag>
+            <tag> 递归 </tag>
             
-            <tag> binary tree </tag>
+            <tag> 二叉树 </tag>
             
             <tag> leetcode </tag>
             
@@ -1144,7 +1217,7 @@
       
         <tags>
             
-            <tag> recursion </tag>
+            <tag> 递归 </tag>
             
             <tag> array </tag>
             
@@ -1177,11 +1250,11 @@
       
         <tags>
             
-            <tag> binary tree </tag>
+            <tag> 二叉树 </tag>
             
             <tag> leetcode </tag>
             
-            <tag> BST </tag>
+            <tag> 二叉搜索树 </tag>
             
         </tags>
       
@@ -1206,7 +1279,7 @@
       
         <tags>
             
-            <tag> dynamic programming </tag>
+            <tag> 动态规划 </tag>
             
             <tag> leetcode </tag>
             
@@ -1258,7 +1331,7 @@
       
         <tags>
             
-            <tag> recursion </tag>
+            <tag> 递归 </tag>
             
             <tag> leetcode </tag>
             
@@ -1289,15 +1362,9 @@
       
         <tags>
             
-            <tag> Computer Networking </tag>
+            <tag> 计算机网络 </tag>
             
-            <tag> IP </tag>
-            
-            <tag> ICMP </tag>
-            
-            <tag> IGMP </tag>
-            
-            <tag> ARP </tag>
+            <tag> TCP/IP </tag>
             
         </tags>
       
@@ -1324,11 +1391,11 @@
             
             <tag> leetcode </tag>
             
-            <tag> linked list </tag>
-            
             <tag> balanced binary tree </tag>
             
-            <tag> BST </tag>
+            <tag> 链表 </tag>
+            
+            <tag> 二叉搜索树 </tag>
             
         </tags>
       
@@ -1355,7 +1422,7 @@
             
             <tag> leetcode </tag>
             
-            <tag> linked list </tag>
+            <tag> 链表 </tag>
             
         </tags>
       
@@ -1380,15 +1447,9 @@
       
         <tags>
             
-            <tag> Computer Networking </tag>
+            <tag> 计算机网络 </tag>
             
-            <tag> TCP </tag>
-            
-            <tag> UDP </tag>
-            
-            <tag> flow control </tag>
-            
-            <tag> congestion control </tag>
+            <tag> TCP/IP </tag>
             
         </tags>
       
@@ -1413,9 +1474,9 @@
       
         <tags>
             
-            <tag> recursion </tag>
+            <tag> 递归 </tag>
             
-            <tag> linked list </tag>
+            <tag> 链表 </tag>
             
             <tag> reverse </tag>
             
@@ -1442,11 +1503,9 @@
       
         <tags>
             
-            <tag> tree </tag>
-            
             <tag> leetcode </tag>
             
-            <tag> traversal </tag>
+            <tag> 遍历 </tag>
             
         </tags>
       
@@ -1471,11 +1530,11 @@
       
         <tags>
             
-            <tag> binary tree </tag>
+            <tag> 二叉树 </tag>
             
             <tag> leetcode </tag>
             
-            <tag> traversal </tag>
+            <tag> 遍历 </tag>
             
             <tag> level order </tag>
             
@@ -1502,7 +1561,7 @@
       
         <tags>
             
-            <tag> binary tree </tag>
+            <tag> 二叉树 </tag>
             
             <tag> leetcode </tag>
             
@@ -1535,7 +1594,7 @@
             
             <tag> leetcode </tag>
             
-            <tag> linked list </tag>
+            <tag> 链表 </tag>
             
             <tag> hash </tag>
             
@@ -1564,7 +1623,7 @@
       
         <tags>
             
-            <tag> Computer Networking </tag>
+            <tag> 计算机网络 </tag>
             
         </tags>
       
@@ -1589,15 +1648,15 @@
       
         <tags>
             
-            <tag> recursion </tag>
+            <tag> 递归 </tag>
             
             <tag> leetcode </tag>
             
-            <tag> traversal </tag>
-            
-            <tag> BST </tag>
+            <tag> 遍历 </tag>
             
             <tag> hash </tag>
+            
+            <tag> 二叉搜索树 </tag>
             
         </tags>
       
@@ -1622,13 +1681,11 @@
       
         <tags>
             
-            <tag> recursion </tag>
-            
-            <tag> tree </tag>
+            <tag> 递归 </tag>
             
             <tag> leetcode </tag>
             
-            <tag> traversal </tag>
+            <tag> 遍历 </tag>
             
             <tag> preorder </tag>
             
@@ -1657,9 +1714,7 @@
       
         <tags>
             
-            <tag> recursion </tag>
-            
-            <tag> tree </tag>
+            <tag> 递归 </tag>
             
             <tag> leetcode </tag>
             
@@ -1686,13 +1741,11 @@
       
         <tags>
             
-            <tag> recursion </tag>
-            
-            <tag> tree </tag>
+            <tag> 递归 </tag>
             
             <tag> leetcode </tag>
             
-            <tag> traversal </tag>
+            <tag> 遍历 </tag>
             
             <tag> preorder </tag>
             
@@ -1719,7 +1772,7 @@
       
         <tags>
             
-            <tag> Head First Design Patterns </tag>
+            <tag> Head First 设计模式 </tag>
             
         </tags>
       
@@ -1744,7 +1797,7 @@
       
         <tags>
             
-            <tag> Head First Design Patterns </tag>
+            <tag> Head First 设计模式 </tag>
             
         </tags>
       
@@ -1769,17 +1822,15 @@
       
         <tags>
             
-            <tag> tree </tag>
-            
             <tag> leetcode </tag>
             
-            <tag> traversal </tag>
+            <tag> 遍历 </tag>
             
             <tag> morris </tag>
             
             <tag> inorder </tag>
             
-            <tag> BST </tag>
+            <tag> 二叉搜索树 </tag>
             
         </tags>
       
@@ -1804,7 +1855,7 @@
       
         <tags>
             
-            <tag> Head First Design Patterns </tag>
+            <tag> Head First 设计模式 </tag>
             
             <tag> dynamic proxy </tag>
             
@@ -1831,7 +1882,7 @@
       
         <tags>
             
-            <tag> Head First Design Patterns </tag>
+            <tag> Head First 设计模式 </tag>
             
         </tags>
       
@@ -1856,7 +1907,7 @@
       
         <tags>
             
-            <tag> Head First Design Patterns </tag>
+            <tag> Head First 设计模式 </tag>
             
         </tags>
       
@@ -1881,7 +1932,7 @@
       
         <tags>
             
-            <tag> Head First Design Patterns </tag>
+            <tag> Head First 设计模式 </tag>
             
         </tags>
       
@@ -1906,7 +1957,7 @@
       
         <tags>
             
-            <tag> Head First Design Patterns </tag>
+            <tag> Head First 设计模式 </tag>
             
         </tags>
       
@@ -1931,15 +1982,13 @@
       
         <tags>
             
-            <tag> recursion </tag>
-            
-            <tag> tree </tag>
+            <tag> 递归 </tag>
             
             <tag> leetcode </tag>
             
             <tag> inorder </tag>
             
-            <tag> BST </tag>
+            <tag> 二叉搜索树 </tag>
             
         </tags>
       
@@ -1964,7 +2013,7 @@
       
         <tags>
             
-            <tag> Head First Design Patterns </tag>
+            <tag> Head First 设计模式 </tag>
             
         </tags>
       
@@ -1973,9 +2022,9 @@
     
     
     <entry>
-      <title>Python str.title 方法</title>
-      <link href="/documentation/python-str-title-function/"/>
-      <url>/documentation/python-str-title-function/</url>
+      <title>str.title 方法</title>
+      <link href="/documentation/str-title-function/"/>
+      <url>/documentation/str-title-function/</url>
       
         <content type="html"><![CDATA[<blockquote><p><a href="https://devdocs.io/python~3.6/library/stdtypes#str.title" target="_blank" rel="noopener"><code>str.title()</code></a></p></blockquote><p>Return a titlecased version of the string where words start with an uppercase character and the remaining characters are lowercase.</p><p>For example:</p><figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="meta">&gt;&gt;&gt; </span><span class="string">'Hello world'</span>.title()</span><br><span class="line"><span class="string">'Hello World'</span></span><br></pre></td></tr></table></figure><p>The algorithm uses a simple language-independent definition of a word as groups of consecutive letters. The definition works in many contexts but it means that apostrophes in contractions and possessives form word boundaries, which may not be the desired result:</p><figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="meta">&gt;&gt;&gt; </span><span class="string">"they're bill's friends from the UK"</span>.title()</span><br><span class="line"><span class="string">"They'Re Bill'S Friends From The Uk"</span></span><br></pre></td></tr></table></figure><p>A workaround for apostrophes can be constructed using regular expressions:</p><figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="meta">&gt;&gt;&gt; </span><span class="keyword">import</span> re</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span><span class="function"><span class="keyword">def</span> <span class="title">titlecase</span><span class="params">(s)</span>:</span></span><br><span class="line"><span class="meta">... </span>    <span class="keyword">return</span> re.sub(<span class="string">r"[A-Za-z]+('[A-Za-z]+)?"</span>,</span><br><span class="line"><span class="meta">... </span>                  <span class="keyword">lambda</span> mo: mo.group(<span class="number">0</span>)[<span class="number">0</span>].upper() +</span><br><span class="line"><span class="meta">... </span>                             mo.group(<span class="number">0</span>)[<span class="number">1</span>:].lower(),</span><br><span class="line"><span class="meta">... </span>                  s)</span><br><span class="line">...</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>titlecase(<span class="string">"they're bill's friends."</span>)</span><br><span class="line"><span class="string">"They're Bill's Friends."</span></span><br></pre></td></tr></table></figure>]]></content>
       
@@ -1989,7 +2038,7 @@
       
         <tags>
             
-            <tag> python </tag>
+            <tag> Python </tag>
             
         </tags>
       
@@ -2014,7 +2063,7 @@
       
         <tags>
             
-            <tag> Head First Design Patterns </tag>
+            <tag> Head First 设计模式 </tag>
             
         </tags>
       
@@ -2039,7 +2088,7 @@
       
         <tags>
             
-            <tag> Head First Design Patterns </tag>
+            <tag> Head First 设计模式 </tag>
             
         </tags>
       
@@ -2064,7 +2113,7 @@
       
         <tags>
             
-            <tag> Head First Design Patterns </tag>
+            <tag> Head First 设计模式 </tag>
             
         </tags>
       
@@ -2089,7 +2138,7 @@
       
         <tags>
             
-            <tag> Head First Design Patterns </tag>
+            <tag> Head First 设计模式 </tag>
             
         </tags>
       
@@ -2114,7 +2163,7 @@
       
         <tags>
             
-            <tag> Head First Design Patterns </tag>
+            <tag> Head First 设计模式 </tag>
             
         </tags>
       
@@ -2139,7 +2188,7 @@
       
         <tags>
             
-            <tag> Head First Design Patterns </tag>
+            <tag> Head First 设计模式 </tag>
             
         </tags>
       
@@ -2164,7 +2213,7 @@
       
         <tags>
             
-            <tag> Head First Design Patterns </tag>
+            <tag> Head First 设计模式 </tag>
             
         </tags>
       
@@ -2189,7 +2238,7 @@
       
         <tags>
             
-            <tag> Head First Design Patterns </tag>
+            <tag> Head First 设计模式 </tag>
             
         </tags>
       
@@ -2214,7 +2263,7 @@
       
         <tags>
             
-            <tag> dynamic programming </tag>
+            <tag> 动态规划 </tag>
             
             <tag> leetcode </tag>
             
@@ -2241,13 +2290,13 @@
       
         <tags>
             
-            <tag> dynamic programming </tag>
+            <tag> 动态规划 </tag>
             
-            <tag> recursion </tag>
+            <tag> 递归 </tag>
             
             <tag> leetcode </tag>
             
-            <tag> binary search </tag>
+            <tag> 二分查找 </tag>
             
         </tags>
       
@@ -2272,7 +2321,7 @@
       
         <tags>
             
-            <tag> dynamic programming </tag>
+            <tag> 动态规划 </tag>
             
             <tag> leetcode </tag>
             
@@ -2299,7 +2348,7 @@
       
         <tags>
             
-            <tag> dynamic programming </tag>
+            <tag> 动态规划 </tag>
             
             <tag> leetcode </tag>
             
@@ -2326,9 +2375,9 @@
       
         <tags>
             
-            <tag> dynamic programming </tag>
+            <tag> 动态规划 </tag>
             
-            <tag> recursion </tag>
+            <tag> 递归 </tag>
             
             <tag> leetcode </tag>
             
@@ -2355,15 +2404,15 @@
       
         <tags>
             
-            <tag> dynamic programming </tag>
+            <tag> 动态规划 </tag>
             
-            <tag> recursion </tag>
+            <tag> 递归 </tag>
             
             <tag> leetcode </tag>
             
             <tag> palindrome </tag>
             
-            <tag> backtracking </tag>
+            <tag> 回溯法 </tag>
             
         </tags>
       
@@ -2388,7 +2437,7 @@
       
         <tags>
             
-            <tag> dynamic programming </tag>
+            <tag> 动态规划 </tag>
             
             <tag> leetcode </tag>
             
@@ -2415,7 +2464,7 @@
       
         <tags>
             
-            <tag> dynamic programming </tag>
+            <tag> 动态规划 </tag>
             
             <tag> leetcode </tag>
             
@@ -2442,7 +2491,7 @@
       
         <tags>
             
-            <tag> dynamic programming </tag>
+            <tag> 动态规划 </tag>
             
             <tag> leetcode </tag>
             
@@ -2469,7 +2518,7 @@
       
         <tags>
             
-            <tag> dynamic programming </tag>
+            <tag> 动态规划 </tag>
             
             <tag> leetcode </tag>
             
@@ -2496,7 +2545,7 @@
       
         <tags>
             
-            <tag> dynamic programming </tag>
+            <tag> 动态规划 </tag>
             
             <tag> leetcode </tag>
             
@@ -2523,7 +2572,7 @@
       
         <tags>
             
-            <tag> dynamic programming </tag>
+            <tag> 动态规划 </tag>
             
             <tag> leetcode </tag>
             
@@ -2550,7 +2599,7 @@
       
         <tags>
             
-            <tag> dynamic programming </tag>
+            <tag> 动态规划 </tag>
             
             <tag> leetcode </tag>
             
@@ -2577,9 +2626,9 @@
       
         <tags>
             
-            <tag> dynamic programming </tag>
+            <tag> 动态规划 </tag>
             
-            <tag> recursion </tag>
+            <tag> 递归 </tag>
             
             <tag> leetcode </tag>
             
@@ -2606,15 +2655,13 @@
       
         <tags>
             
-            <tag> dynamic programming </tag>
+            <tag> 动态规划 </tag>
             
-            <tag> divide and conquer </tag>
-            
-            <tag> tree </tag>
+            <tag> 分治法 </tag>
             
             <tag> leetcode </tag>
             
-            <tag> BST </tag>
+            <tag> 二叉搜索树 </tag>
             
         </tags>
       
@@ -2639,7 +2686,7 @@
       
         <tags>
             
-            <tag> dynamic programming </tag>
+            <tag> 动态规划 </tag>
             
             <tag> leetcode </tag>
             
@@ -2654,7 +2701,7 @@
       <link href="/notes/introduction-to-ml-with-python/grid-search/"/>
       <url>/notes/introduction-to-ml-with-python/grid-search/</url>
       
-        <content type="html"><![CDATA[<p>找到一个模型的重要参数（提供最佳泛化性能的参数）的取值是一项棘手的任务，但对于几乎所有模型和数据集来说都是必要的。由于这项任务如此常见，所以 scikit-learn 中有一些标准方法可以帮你完成。最常见的就是<strong>网格搜索</strong>（grid search），它主要指尝试我们关心的参数的所有可能组合。</p><p>考虑一个具有 RBF（径向基函数）核的核 SVM 的例子，它在 SVC 类中实现。它有 2 个重要参数：核宽度 gamma 核正则化参数 C。假设我们希望尝试 C 的取值为 0.001、0.01、0.1、1、10 和 100，gamma 也取这 6 个值，所以总共有 36 种参数组合。</p><a id="more"></a><h1 id="简单网格搜索">简单网格搜索</h1><p>我们可以实现一个简单的网格搜索，在 2 个参数上使用 for 循环，对每种参数组合分别训练并评估一个分类器。</p><figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="comment"># 简单的网格搜索实现</span></span><br><span class="line">iris = load_iris()</span><br><span class="line">X_train, X_test, y_train, y_test = train_test_split(</span><br><span class="line">    iris.data, iris.target, random_state=<span class="number">0</span>)</span><br><span class="line">print(<span class="string">'Size of training set: &#123;&#125;  size of test set: &#123;&#125;'</span>.format(</span><br><span class="line">    X_train.shape[<span class="number">0</span>], X_test.shape[<span class="number">0</span>]))</span><br><span class="line"></span><br><span class="line">best_score = <span class="number">0</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">for</span> gamma <span class="keyword">in</span> [<span class="number">0.001</span>, <span class="number">0.01</span>, <span class="number">0.1</span>, <span class="number">1</span>, <span class="number">10</span>, <span class="number">100</span>]:</span><br><span class="line">    <span class="keyword">for</span> C <span class="keyword">in</span> [<span class="number">0.001</span>, <span class="number">0.01</span>, <span class="number">0.1</span>, <span class="number">1</span>, <span class="number">10</span>, <span class="number">100</span>]:</span><br><span class="line">        <span class="comment"># 对每种参数组合都训练一个SVC</span></span><br><span class="line">        svm = SVC(gamma=gamma, C=C)</span><br><span class="line">        svm.fit(X_train, y_train)</span><br><span class="line">        <span class="comment"># 在测试集上评估SVC</span></span><br><span class="line">        score = svm.score(X_test, y_test)</span><br><span class="line">        <span class="keyword">if</span> score &gt; best_score:</span><br><span class="line">            best_score = score</span><br><span class="line">            best_parameters = &#123;<span class="string">'C'</span>: C, <span class="string">'gamma'</span>: gamma&#125;</span><br><span class="line"></span><br><span class="line">print(<span class="string">'Best score: &#123;:.2f&#125;'</span>.format(best_score))</span><br><span class="line">print(<span class="string">'Best parameters: &#123;&#125;'</span>.format(best_parameters))</span><br></pre></td></tr></table></figure><figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">Size of training set: 112  size of test set: 38</span><br><span class="line">Best score: 0.97</span><br><span class="line">Best parameters: &#123;&apos;C&apos;: 100, &apos;gamma&apos;: 0.001&#125;</span><br></pre></td></tr></table></figure><h1 id="参数过拟合的风险与验证集">参数过拟合的风险与验证集</h1><p>看到这个结果，我们可能忍不住要报告，我们找到了一个在数据集上精度达到 97% 的模型。然而，这种说法可能过于乐观了（或者就是错误的），其原因如下：我们尝试了许多不同的参数，并选择了在测试集上精度最高的那个，但这个精度不一定能推广到新数据上。<strong>由于我们使用测试数据进行调参，所以不能再用它来评估模型的好坏。</strong>我们最开始需要将数据划分为训练集和测试集也是因为这个原因。<strong>我们需要一个独立的数据集来进行评估，一个在创建模型时没有用到的数据集。</strong></p><p>为了解决这个问题，一种方法是再次划分数据，这样我们得到了 3 个数据集：用于构建模型的训练集，用于选择模型的验证集（开发集），用于评估所选参数性能的测试集。</p><figure class="highlight python"><table><tr><td class="code"><pre><span class="line">mglearn.plots.plot_threefold_split()</span><br></pre></td></tr></table></figure><p><img src="/uploads/image/introduction-to-ml-with-python/threefold-split.png"></p><p><strong>利用验证集选定最佳参数之后，我们可以找到的参数设置重新构建一个模型，但是要同时在训练数据和验证数据上进行训练。</strong>这样我们可以利用尽可能多的数据来构建模型。</p><figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="comment"># 将数据划分为训练+验证集与测试集</span></span><br><span class="line">X_trainval, X_test, y_trainval, y_test = train_test_split(</span><br><span class="line">    iris.data, iris.target, random_state=<span class="number">0</span>)</span><br><span class="line"><span class="comment"># 将训练+验证集划分为训练集和验证集</span></span><br><span class="line">X_train, X_valid, y_train, y_valid = train_test_split(</span><br><span class="line">    X_trainval, y_trainval, random_state=<span class="number">1</span>)</span><br><span class="line">print(<span class="string">'Size of training set: &#123;&#125;  size of validation set: &#123;&#125;  size of test set: &#123;&#125;'</span>.format(</span><br><span class="line">    X_train.shape[<span class="number">0</span>], X_valid.shape[<span class="number">0</span>], X_test.shape[<span class="number">0</span>]))</span><br><span class="line"></span><br><span class="line">best_score = <span class="number">0</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">for</span> gamma <span class="keyword">in</span> [<span class="number">0.001</span>, <span class="number">0.01</span>, <span class="number">0.1</span>, <span class="number">1</span>, <span class="number">10</span>, <span class="number">100</span>]:</span><br><span class="line">    <span class="keyword">for</span> C <span class="keyword">in</span> [<span class="number">0.001</span>, <span class="number">0.01</span>, <span class="number">0.1</span>, <span class="number">1</span>, <span class="number">10</span>, <span class="number">100</span>]:</span><br><span class="line">        <span class="comment"># 对每种参数组合都训练一个SVC</span></span><br><span class="line">        svm = SVC(gamma=gamma, C=C)</span><br><span class="line">        svm.fit(X_train, y_train)</span><br><span class="line">        <span class="comment"># 在测试集上评估SVC</span></span><br><span class="line">        score = svm.score(X_valid, y_valid)</span><br><span class="line">        <span class="keyword">if</span> score &gt; best_score:</span><br><span class="line">            best_score = score</span><br><span class="line">            best_parameters = &#123;<span class="string">'C'</span>: C, <span class="string">'gamma'</span>: gamma&#125;</span><br><span class="line"><span class="comment"># 在训练+验证集上重新构建一个模型，并在测试集上进行评估</span></span><br><span class="line">svm = SVC(**best_parameters)</span><br><span class="line">svm.fit(X_trainval, y_trainval)</span><br><span class="line">test_score = svm.score(X_test, y_test)</span><br><span class="line">print(<span class="string">'Best score on validation set: &#123;:.2f&#125;'</span>.format(best_score))</span><br><span class="line">print(<span class="string">'Best parameters: &#123;&#125;'</span>.format(best_parameters))</span><br><span class="line">print(<span class="string">'Test set score with best parameters: &#123;:.2f&#125;'</span>.format(test_score))</span><br></pre></td></tr></table></figure><figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">Size of training set: 84  size of validation set: 28  size of test set: 38</span><br><span class="line">Best score on validation set: 0.96</span><br><span class="line">Best parameters: &#123;&apos;C&apos;: 10, &apos;gamma&apos;: 0.001&#125;</span><br><span class="line">Test set score with best parameters: 0.92</span><br></pre></td></tr></table></figure><p>验证集上的最高分数是 96%，这比之前略低，可能是因为我们使用了更少的数据来训练模型。测试集上的分数更低，为 92%。因此，我们只能声称对 92% 的新数据正确分类，而不是我们之前认为的 97%。</p><p>训练集、验证集和测试集之间的区别对于在实践中应用机器学习方法至关重要。任何根据测试集精度所做的选择都会将测试集的信息“泄漏”（leak）到模型中。因此，<strong>保留一个单独的测试集是很重要的，它仅用于最终评估。</strong>严格来说，在测试集上对不止一个模型进行评估并选择更好的那个，将会导致对模型精度过于乐观的估计。</p><h1 id="带交叉验证的网格搜索">带交叉验证的网格搜索</h1><p>虽然将数据划分为训练集、验证集和测试集的方法是可行的，也相对常用，但这种方法对数据的划分方法相当敏感。为了得到对泛化性能的更好估计，我们可以使用交叉验证来评估每种参数组合的性能，而不是仅将数据单次划分为训练集与验证集。</p><figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="keyword">for</span> gamma <span class="keyword">in</span> [<span class="number">0.001</span>, <span class="number">0.01</span>, <span class="number">0.1</span>, <span class="number">1</span>, <span class="number">10</span>, <span class="number">100</span>]:</span><br><span class="line">    <span class="keyword">for</span> C <span class="keyword">in</span> [<span class="number">0.001</span>, <span class="number">0.01</span>, <span class="number">0.1</span>, <span class="number">1</span>, <span class="number">10</span>, <span class="number">100</span>]:</span><br><span class="line">        <span class="comment"># 对每种参数组合都训练一个SVC</span></span><br><span class="line">        svm = SVC(gamma=gamma, C=C)</span><br><span class="line">        svm.fit(X_train, y_train)</span><br><span class="line">        <span class="comment"># 执行交叉验证</span></span><br><span class="line">        scores = cross_val_score(svm, X_trainval, y_trainval, cv=<span class="number">5</span>)</span><br><span class="line">        <span class="comment"># 计算交叉验证的平均精度</span></span><br><span class="line">        score = np.mean(scores)</span><br><span class="line">        <span class="keyword">if</span> score &gt; best_score:</span><br><span class="line">            best_score = score</span><br><span class="line">            best_parameters = &#123;<span class="string">'C'</span>: C, <span class="string">'gamma'</span>: gamma&#125;</span><br><span class="line"><span class="comment"># 在训练+验证集上重新构建一个模型，并在测试集上进行评估</span></span><br><span class="line">svm = SVC(**best_parameters)</span><br><span class="line">svm.fit(X_trainval, y_trainval)</span><br></pre></td></tr></table></figure><p>要想使用 5 折交叉验证对 C 和 gamma 特定取值的 SVM 的精度进行评估，需要训练 36 x 5 = 180 个模型。你可以想象，使用交叉验证的主要缺点就是训练所有这些模型所需花费的时间。</p><p>下面的可视化说明了上述代码如何选择最佳参数设置。</p><figure class="highlight python"><table><tr><td class="code"><pre><span class="line">mglearn.plots.plot_cross_val_selection()</span><br></pre></td></tr></table></figure><p><img src="/uploads/image/introduction-to-ml-with-python/cross-val-grid-search.png"></p><p>对于每种参数设置（图中仅显示了一部分），需要计算 5 个精度值，交叉验证的每次划分都要计算一个精度值。然后，对每种参数设置计算平均验证精度。最后，选择平均验证精度最高的参数，用圆圈标记。</p><blockquote><p>交叉验证是在特定数据集上对给定模型进行评估的一种方法。但它通常与网格搜索等参数搜索方法结合使用。因此，许多人使用<strong>交叉验证</strong>（cross-validation）这一术语来通俗地指代带交叉验证的网格搜索。</p></blockquote><p>由于带交叉验证的网格搜索是一种常用的调参方法，因此 scikit-learn 提供了 GridSearchCV 类，它以估计器（estimator）的形式实现了这种方法。要使用 GridSearchCV 类，你首先需要用一个字典指定要搜索的参数。然后 GridSearchCV 会执行所有必要的模型拟合。字典的键是我们要调节的参数名称，字典的值是我们想要尝试的参数设置。</p><figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="comment"># 如果 C 和 gamma 想要尝试的取值为 0.001、0.01、0.1、1、10 和 100</span></span><br><span class="line"><span class="comment"># 可以将其转化为下面这个字典</span></span><br><span class="line">param_grid = &#123;<span class="string">'C'</span>: [<span class="number">0.001</span>, <span class="number">0.01</span>, <span class="number">0.1</span>, <span class="number">1</span>, <span class="number">10</span>, <span class="number">100</span>],</span><br><span class="line">              <span class="string">'gamma'</span>: [<span class="number">0.001</span>, <span class="number">0.01</span>, <span class="number">0.1</span>, <span class="number">1</span>, <span class="number">10</span>, <span class="number">100</span>]&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">from</span> sklearn.model_selection <span class="keyword">import</span> GridSearchCV</span><br><span class="line"><span class="comment"># 将 GridSearchCV 实例化</span></span><br><span class="line">grid_search = GridSearchCV(SVC(), param_grid, cv=<span class="number">5</span>)</span><br><span class="line"></span><br><span class="line"><span class="comment"># GridSearchCV 将使用交叉验证来代替之前的划分训练集和验证集方法</span></span><br><span class="line"><span class="comment"># 但是，我们仍需要将数据划分为训练集和测试集，以避免参数过拟合</span></span><br><span class="line">X_train, X_test, y_train, y_test = train_test_split(</span><br><span class="line">    iris.data, iris.target, random_state=<span class="number">0</span>)</span><br><span class="line"></span><br><span class="line"><span class="comment"># 创建的 grid_search 对象的行为就像一个分类器</span></span><br><span class="line"><span class="comment"># 我们可以对它调用标准的 fit、predict 和 score 方法</span></span><br><span class="line"><span class="comment"># 但我们在调用 fit 时，它会对 param_grid 指定的每种参数组合都运行交叉验证</span></span><br><span class="line">grid_search.fit(X_train, y_train)</span><br><span class="line"></span><br><span class="line"><span class="comment"># 拟合 GridSearchCV 对象不仅会搜索最佳参数，还会利用得到的最佳参数在整个</span></span><br><span class="line"><span class="comment"># 训练数据集上自动拟合一个新模型</span></span><br><span class="line"><span class="comment"># GridSearchCV 类提供了非常方便的接口，可以用 predict 和 score 方法来访问</span></span><br><span class="line"><span class="comment"># 重新训练过的模型</span></span><br><span class="line"><span class="comment"># 为了评估找到的最佳参数的泛化能力，我们可以在测试集上调用 score</span></span><br><span class="line">print(<span class="string">'Test set score: &#123;:.2f&#125;'</span>.format(grid_search.score(X_test, y_test)))</span><br><span class="line"></span><br><span class="line"><span class="comment"># 我们找到的参数保存在 best_params_ 属性中，而交叉验证最佳精度保存在 best_score_ 中</span></span><br><span class="line">print(<span class="string">'Best parameters: &#123;&#125;'</span>.format(grid_search.best_params_))</span><br><span class="line">print(<span class="string">'Best cross-validation score: &#123;:.2f&#125;'</span>.format(grid_search.best_score_))</span><br><span class="line"></span><br><span class="line"><span class="comment"># 能够访问实际找到的模型，这有时是很有帮助的，比如查看系数或特征重要性</span></span><br><span class="line"><span class="comment"># 你可以用 best_estimator_ 属性来访问最佳参数对应的模型</span></span><br><span class="line"><span class="comment"># 由于 grid_search 本身具有 predict 和 score 方法</span></span><br><span class="line"><span class="comment"># 所以不需要使用 best_estimator_ 来进行预测和评估模型</span></span><br><span class="line">print(<span class="string">'Best estimator:\n&#123;&#125;'</span>.format(grid_search.best_estimator_))</span><br></pre></td></tr></table></figure><figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">Test set score: 0.97</span><br><span class="line">Best parameters: &#123;&apos;C&apos;: 100, &apos;gamma&apos;: 0.01&#125;</span><br><span class="line">Best cross-validation score: 0.97</span><br><span class="line">Best estimator:</span><br><span class="line">SVC(C=100, cache_size=200, class_weight=None, coef0=0.0,</span><br><span class="line">    decision_function_shape=&apos;ovr&apos;, degree=3, gamma=0.01, kernel=&apos;rbf&apos;,</span><br><span class="line">    max_iter=-1, probability=False, random_state=None, shrinking=True,</span><br><span class="line">    tol=0.001, verbose=False)</span><br></pre></td></tr></table></figure><p>利用交叉验证选择参数，我们实际上找到了一个在测试集上精度为 97% 的模型。重要的是，我们<strong>没有使用测试集</strong>在选择参数。</p><p>注意不要将 <code>best_score_</code> 与 模型在测试集上调用 <code>score</code> 方法计算得到的泛化性能弄混。使用 <code>score</code> 方法（或者对 <code>predict</code> 方法的输出结果进行评估）采用的是<strong>在整个训练集上</strong>训练的模型。而 <code>best_score_</code> 属性保存的是交叉验证的平均精度，是<strong>在训练集上进行交叉验证</strong>得到的。</p><h2 id="分析交叉验证的结果">分析交叉验证的结果</h2><p>将交叉验证的结果可视化通常有助于理解模型泛化能力对所搜索参数的依赖关系。由于运行网格搜索的计算成本相当高，所以通常最好从相对比较稀疏且较小的网格开始搜索。然后我们可以检查交叉验证网格搜索的结果，可能也会扩展搜索范围。网格搜索的结果可以在 <code>cv_results_</code> 属性中找到，它是一个字典，其中保存了搜索的所有内容。它里面包含许多细节，最好将其转换成 pandas 数据框后查看：</p><figure class="highlight python"><table><tr><td class="code"><pre><span class="line">results = pd.DataFrame(grid_search.cv_results_)</span><br><span class="line"><span class="comment"># 显示前 5 行</span></span><br><span class="line">display(results.head())</span><br></pre></td></tr></table></figure><figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">   mean_fit_time  std_fit_time  ...  std_test_score  rank_test_score</span><br><span class="line">0       0.000551      0.000136  ...        0.011371               22</span><br><span class="line">1       0.000453      0.000039  ...        0.011371               22</span><br><span class="line">2       0.000471      0.000039  ...        0.011371               22</span><br><span class="line">3       0.000438      0.000004  ...        0.011371               22</span><br><span class="line">4       0.000459      0.000028  ...        0.011371               22</span><br><span class="line"></span><br><span class="line">[5 rows x 15 columns]</span><br></pre></td></tr></table></figure><p>results 中每一行对应一种特定的参数设置。对于每种参数设置，交叉验证所有划分的结果都被记录下来，所有划分的平均值和标准差也被记录下来。由于我们搜索的是一个二维参数网格（C 和 gamma），所以最适合用热图可视化。我们首先提取平均验证分数，然后改变分数数组的形状，使其坐标轴分别对应于 C 和 gamma：</p><figure class="highlight python"><table><tr><td class="code"><pre><span class="line">scores = np.array(results.mean_test_score).reshape(<span class="number">6</span>, <span class="number">6</span>)</span><br><span class="line"><span class="comment"># 对交叉验证平均分数作图</span></span><br><span class="line">mglearn.tools.heatmap(scores, xlabel=<span class="string">'gamma'</span>, xticklabels=param_grid[<span class="string">'gamma'</span>],</span><br><span class="line">    ylabel=<span class="string">'C'</span>, yticklabels=param_grid[<span class="string">'C'</span>], cmap=<span class="string">'viridis'</span>)</span><br></pre></td></tr></table></figure><p><img src="/uploads/image/introduction-to-ml-with-python/grid-search-heatmap.png"></p><p>你可以看到，SVC 对参数设置非常敏感。对于许多种参数设置，精度都在 40% 左右，这是非常糟糕的；对于其他参数设置，精度约为 96%。我们可以从这张图中看出以下几点。首先，我们调节的参数对于获得良好的性能<strong>非常重要</strong>。这两个参数 都很重要，因为调节它们可以将精度从 40% 提高到 96%。此外，在我们选择的参数范围中也可以看到输出发生了显著的变化。同样重要的是要注意，参数的范围要足够大：每个参数的最佳取值不能位于图像的边界上。</p><p>下面我们来看几张图，其结果不那么理想，因为选择的搜索范围不合适。</p><figure class="highlight python"><table><tr><td class="code"><pre><span class="line"></span><br><span class="line">fig, axes = plt.subplots(<span class="number">1</span>, <span class="number">3</span>, figsize=(<span class="number">13</span>, <span class="number">5</span>))</span><br><span class="line">param_grid_linear = &#123;<span class="string">'C'</span>: np.linspace(<span class="number">1</span>, <span class="number">2</span>, <span class="number">6</span>),</span><br><span class="line">                     <span class="string">'gamma'</span>: np.linspace(<span class="number">1</span>, <span class="number">2</span>, <span class="number">6</span>)&#125;</span><br><span class="line"></span><br><span class="line">param_grid_one_log = &#123;<span class="string">'C'</span>: np.linspace(<span class="number">1</span>, <span class="number">2</span>, <span class="number">6</span>),</span><br><span class="line">                     <span class="string">'gamma'</span>: np.logspace(<span class="number">-3</span>, <span class="number">2</span>, <span class="number">6</span>)&#125;</span><br><span class="line"></span><br><span class="line">param_grid_range = &#123;<span class="string">'C'</span>: np.logspace(<span class="number">-3</span>, <span class="number">2</span>, <span class="number">6</span>),</span><br><span class="line">                     <span class="string">'gamma'</span>: np.logspace(<span class="number">-7</span>, <span class="number">-2</span>, <span class="number">6</span>)&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">for</span> param_grid, ax <span class="keyword">in</span> zip([param_grid_linear, param_grid_one_log, </span><br><span class="line">                           param_grid_range], axes):</span><br><span class="line">    grid_search = GridSearchCV(SVC(), param_grid, cv=<span class="number">5</span>)</span><br><span class="line">    grid_search.fit(X_train, y_train)</span><br><span class="line">    scores = grid_search.cv_results_[<span class="string">'mean_test_score'</span>].reshape(<span class="number">6</span>, <span class="number">6</span>)</span><br><span class="line"></span><br><span class="line">    scores_image = mglearn.tools.heatmap(scores, xlabel=<span class="string">'gamma'</span>,</span><br><span class="line">        ylabel=<span class="string">'C'</span>, xticklabels=param_grid[<span class="string">'gamma'</span>],</span><br><span class="line">        yticklabels=param_grid[<span class="string">'C'</span>], cmap=<span class="string">'viridis'</span>, ax=ax)</span><br><span class="line"></span><br><span class="line">plt.colorbar(scores_image, ax=axes.tolist())</span><br></pre></td></tr></table></figure><p><img src="/uploads/image/introduction-to-ml-with-python/grid-search-heatmaps.png"></p><p>第一张图没有显示任何变化。在这种情况下，这是由参数 C 和 gamma 不正确的缩放以及不正确的范围造成的。但如果对于不同的参数设置都看不到精度的变化，也可能是因为这个参数根本不重要。<strong>通常最好在开始时尝试非常极端的值，以观察改变参数是否会导致精度发生变化。</strong></p><p>第二张图显示的是垂直条形模式。这表示只有 gamma 的设置对精度有影响。这可能意味着 gamma 参数的搜索范围是我们所关心的，而 C 参数并不是——也可能意味着 C 参数并不重要。</p><p>第三张图中 C 和 gamma 对应的精度都有变化。但可以看到，在图像的整个左下角都没有发生什么有趣的事情。我们在后面的网格搜索中可以不考虑非常小的值。最佳参数设置出现在右上角。由于最佳参数位于图像的边界，所以我们可以认为，在这个边界之外可能还有更好的取值，我们可能希望改变搜索范围以包含这一区域内的更多参数。</p><p>基于交叉验证分数来调节参数网格是非常好的，也是探索不同参数的重要性的好方法。但是，你不应该在最终测试集上测试不同的参数范围（在验证集上进行调参）——只有确切知道了想要使用的模型，才能对测试集进行评估（在测试集上进行评估）。</p><h2 id="在非网格的空间中搜索">在非网格的空间中搜索</h2><p>在某些情况下，尝试所有参数的所有可能组合并不是一个好主意。例如，SVC 有一个 kernel 参数，根据所选择的 kernel（内核），其他参数也是与之相关的。如果 <code>kernel='linear'</code>，那么模型是线性的，只会用到 C 参数。如果 <code>kernel='rbf'</code>，则需要使用 C 和 gamma 两个参数（但用不到类似 degree 的其他参数）。在这种情况下，搜索 C、gamma 和 kernel 所有可能的组合没有意义：如果 <code>kernel='linear'</code>，那么 gamma 是用不到的，尝试 gamma 的不同取值将会浪费时间。为了处理这种“条件”（conditional）参数，GridSearchCV 的 <code>param_grid</code> 可以是字典组成的列表。列表中每个字典可扩展为一个独立的网格。</p><figure class="highlight python"><table><tr><td class="code"><pre><span class="line">param_grid = [&#123;<span class="string">'kernel'</span>: [<span class="string">'rbf'</span>],  <span class="comment"># kernel 是一个长度为 1 的列表</span></span><br><span class="line">               <span class="string">'C'</span>: [<span class="number">0.001</span>, <span class="number">0.01</span>, <span class="number">0.1</span>, <span class="number">1</span>, <span class="number">10</span>, <span class="number">100</span>],</span><br><span class="line">               <span class="string">'gamma'</span>: [<span class="number">0.001</span>, <span class="number">0.01</span>, <span class="number">0.1</span>, <span class="number">1</span>, <span class="number">10</span>, <span class="number">100</span>]&#125;,</span><br><span class="line">              &#123;<span class="string">'kernel'</span>: [<span class="string">'linear'</span>],</span><br><span class="line">               <span class="string">'C'</span>: [<span class="number">0.001</span>, <span class="number">0.01</span>, <span class="number">0.1</span>, <span class="number">1</span>, <span class="number">10</span>, <span class="number">100</span>]&#125;]</span><br><span class="line">grid_search = GridSearchCV(SVC(), param_grid, cv=<span class="number">5</span>)</span><br><span class="line">grid_search.fit(X_train, y_train)</span><br><span class="line">print(<span class="string">'Best parameters: &#123;&#125;'</span>.format(grid_search.best_params_))</span><br><span class="line">print(<span class="string">'Best cross-validation score: &#123;:.2f&#125;'</span>.format(grid_search.best_score_))</span><br><span class="line"></span><br><span class="line">results = pd.DataFrame(grid_search.cv_results_)</span><br><span class="line"><span class="comment"># 再次查看 cv_results_，如果 kernel='linear'，那么只有 C 是变化的</span></span><br><span class="line">display(results.T)</span><br></pre></td></tr></table></figure><figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">Best parameters: &#123;&apos;C&apos;: 100, &apos;gamma&apos;: 0.01, &apos;kernel&apos;: &apos;rbf&apos;&#125;</span><br><span class="line">Best cross-validation score: 0.97</span><br><span class="line">                                                               0  ...                              41</span><br><span class="line">mean_fit_time                                        0.000518799  ...                     0.000275612</span><br><span class="line">std_fit_time                                         8.65673e-05  ...                     1.92715e-05</span><br><span class="line">mean_score_time                                      0.000243187  ...                     0.000154543</span><br><span class="line">std_score_time                                       5.89067e-05  ...                     1.61281e-06</span><br><span class="line">param_C                                                    0.001  ...                             100</span><br><span class="line">param_gamma                                                0.001  ...                             NaN</span><br><span class="line">param_kernel                                                 rbf  ...                          linear</span><br><span class="line">params             &#123;&apos;C&apos;: 0.001, &apos;gamma&apos;: 0.001, &apos;kernel&apos;: &apos;rbf&apos;&#125;  ...  &#123;&apos;C&apos;: 100, &apos;kernel&apos;: &apos;linear&apos;&#125;</span><br><span class="line">split0_test_score                                          0.375  ...                        0.958333</span><br><span class="line">split1_test_score                                       0.347826  ...                               1</span><br><span class="line">split2_test_score                                       0.363636  ...                               1</span><br><span class="line">split3_test_score                                       0.363636  ...                        0.909091</span><br><span class="line">split4_test_score                                       0.380952  ...                        0.952381</span><br><span class="line">mean_test_score                                         0.366071  ...                        0.964286</span><br><span class="line">std_test_score                                         0.0113708  ...                       0.0338387</span><br><span class="line">rank_test_score                                               27  ...                               3</span><br><span class="line"></span><br><span class="line">[16 rows x 42 columns]</span><br></pre></td></tr></table></figure><h2 id="使用不同的交叉验证策略进行网格搜索">使用不同的交叉验证策略进行网格搜索</h2><p>与 <code>cross_val_score</code> 类似，GridSearchCV 对分类问题默认使用分层 <span class="math inline">\(k\)</span> 折交叉验证，对回归问题默认使用 <span class="math inline">\(k\)</span> 折交叉验证。但是，你可以传入任何交叉验证分离器作为 GridSearchCV 的 cv 参数。特别地，如果只想将数据单词划分为训练集和验证集，你可以使用 ShuffleSplit 或 StratifiedShuffleSplit，并设置 <code>n_iter=1</code>。这对于非常大的数据集或非常慢的模型可能会有帮助。</p><h3 id="嵌套交叉验证">嵌套交叉验证</h3><p>前面在使用 GridSearchCV 时，我们仍然将数据单次划分为训练集和测试集，这可能会导致结果不稳定，也让我们过于依赖数据的此次划分。我们可以再深入一点，不是只将原始数据一次划分为训练集和测试集，而是使用交叉验证进行多次划分，这就是所谓的<strong>嵌套交叉验证</strong>（nested cross-validation）。在嵌套交叉验证中，有一个外层循环，遍历将数据划分为训练集和测试集的所有划分。对于每种划分都运行一次网格搜索（对于外层循环的每种划分可能会得到不同的最佳参数）。然后，对于每种外层划分，利用最佳参数设置计算得到测试集分数。</p><p>这一过程的结果是由分数组成的列表——不是一个模型，也不是一种参数设置。这些分数告诉我们在网格找到的最佳参数下模型的泛化能力好坏。<strong>由于嵌套交叉验证不提供可用于新数据的模型，所以在寻找可用于未来数据的预测模型时很少用到它。</strong>但是，它对于评估给定模型在特定数据集上的效果很有用。</p><p>在 scikit-learn 中实现嵌套交叉验证很简单。我们调用 <code>cross_val_score</code>，并用 GridSearchCV 的一个实例作为模型：</p><blockquote><p><a href="https://devdocs.io/scikit_learn/modules/generated/sklearn.model_selection.parametergrid#sklearn.model_selection.ParameterGrid" target="_blank" rel="noopener"><code>class sklearn.model_selection.ParameterGrid(param_grid)</code></a></p><p>Grid of parameters with a discrete number of values for each.</p><p>Can be used to iterate over parameter value combinations with the Python built-in function iter.</p><figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="meta">&gt;&gt;&gt; </span><span class="keyword">from</span> sklearn.model_selection <span class="keyword">import</span> ParameterGrid</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>param_grid = &#123;<span class="string">'a'</span>: [<span class="number">1</span>, <span class="number">2</span>], <span class="string">'b'</span>: [<span class="literal">True</span>, <span class="literal">False</span>]&#125;</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>list(ParameterGrid(param_grid)) == (</span><br><span class="line"><span class="meta">... </span>   [&#123;<span class="string">'a'</span>: <span class="number">1</span>, <span class="string">'b'</span>: <span class="literal">True</span>&#125;, &#123;<span class="string">'a'</span>: <span class="number">1</span>, <span class="string">'b'</span>: <span class="literal">False</span>&#125;,</span><br><span class="line"><span class="meta">... </span>    &#123;<span class="string">'a'</span>: <span class="number">2</span>, <span class="string">'b'</span>: <span class="literal">True</span>&#125;, &#123;<span class="string">'a'</span>: <span class="number">2</span>, <span class="string">'b'</span>: <span class="literal">False</span>&#125;])</span><br><span class="line"><span class="literal">True</span></span><br></pre></td></tr></table></figure></blockquote><figure class="highlight python"><table><tr><td class="code"><pre><span class="line">param_grid = &#123;<span class="string">'C'</span>: [<span class="number">0.001</span>, <span class="number">0.01</span>, <span class="number">0.1</span>, <span class="number">1</span>, <span class="number">10</span>, <span class="number">100</span>],</span><br><span class="line">              <span class="string">'gamma'</span>: [<span class="number">0.001</span>, <span class="number">0.01</span>, <span class="number">0.1</span>, <span class="number">1</span>, <span class="number">10</span>, <span class="number">100</span>]&#125;</span><br><span class="line"></span><br><span class="line">scores = cross_val_score(GridSearchCV(SVC(), param_grid, cv=<span class="number">5</span>),</span><br><span class="line">                         iris.data, iris.target, cv=<span class="number">5</span>)</span><br><span class="line">print(<span class="string">'Cross-validation scores:'</span>, scores)</span><br><span class="line">print(<span class="string">'Mean cross-validation score:'</span>, scores.mean())</span><br></pre></td></tr></table></figure><figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">Cross-validation scores: [0.96666667 1.         0.96666667 0.96666667 1.        ]</span><br><span class="line">Mean cross-validation score: 0.9800000000000001</span><br></pre></td></tr></table></figure><p>嵌套交叉验证的结果可以总结为 “SVC 在 iris 数据集上的交叉验证平均精度为 98%”——不多也不少（与上一个结果大致相同）。</p><p>这里我们在内层循环和外层循环中都使用了分层 5 折交叉验证。由于 <code>param_grid</code> 包含 36 中参数组合，所以需要构建 36 x 5 x 5 = 900 个模型，导致嵌套交叉验证过程的代价很高。这里我们在内层循环和外层循环中使用相同的交叉验证分离器，但这不是必需的，你可以在内层循环和外层循环中使用交叉验证策略的任意组合。理解上面单行代码的内容可能有点困难，将其展开为 for 循环可能会有所帮助，正如我么在下面这个简化的实现中所做的那样：</p><figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="keyword">from</span> sklearn.model_selection <span class="keyword">import</span> StratifiedKFold, ParameterGrid</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">nested_cv</span><span class="params">(X, y, inner_cv, outer_cv, Classifier, parameter_grid)</span>:</span></span><br><span class="line">    outer_scores = []</span><br><span class="line">    <span class="comment"># 对于外层交叉验证的每次数据划分，split方法返回索引值</span></span><br><span class="line">    <span class="keyword">for</span> training_samples, test_samples <span class="keyword">in</span> outer_cv.split(X, y):</span><br><span class="line">        <span class="comment"># 利用内层交叉验证找到最佳参数</span></span><br><span class="line">        best_params = &#123;&#125;</span><br><span class="line">        best_score = -np.inf</span><br><span class="line">        <span class="comment"># 遍历参数</span></span><br><span class="line">        <span class="keyword">for</span> parameters <span class="keyword">in</span> parameter_grid:</span><br><span class="line">            <span class="comment"># 在内层划分中累加分数</span></span><br><span class="line">            cv_scores = []</span><br><span class="line">            <span class="comment"># 遍历内层交叉验证</span></span><br><span class="line">            <span class="keyword">for</span> inner_train, inner_test <span class="keyword">in</span> inner_cv.split(X[training_samples], y[training_samples]):</span><br><span class="line">                <span class="comment"># 对于给定的参数和训练数据来构建分类器</span></span><br><span class="line">                clf = Classifier(**parameters)</span><br><span class="line">                clf.fit(X[inner_train], y[inner_train])</span><br><span class="line">                <span class="comment"># 在内层测试集上进行评估</span></span><br><span class="line">                score = clf.score(X[inner_test], y[inner_test])</span><br><span class="line">                cv_scores.append(score)</span><br><span class="line">            <span class="comment"># 计算内层交叉验证的平均分数</span></span><br><span class="line">            mean_score = np.mean(cv_scores)</span><br><span class="line">            <span class="keyword">if</span> mean_score &gt; best_score:</span><br><span class="line">                best_score = mean_score</span><br><span class="line">                best_params = parameters</span><br><span class="line">        <span class="comment"># 利用外层训练集和最佳参数来构建模型</span></span><br><span class="line">        clf = Classifier(**best_params)</span><br><span class="line">        clf.fit(X[training_samples], y[training_samples])</span><br><span class="line">        <span class="comment"># 评估模型</span></span><br><span class="line">        outer_scores.append(clf.score(X[test_samples], y[test_samples]))</span><br><span class="line">    <span class="keyword">return</span> np.array(outer_scores)</span><br><span class="line"></span><br><span class="line">scores = nested_cv(iris.data, iris.target, StratifiedKFold(<span class="number">5</span>),</span><br><span class="line">    StratifiedKFold(<span class="number">5</span>), SVC, ParameterGrid(param_grid))</span><br><span class="line">print(<span class="string">'Cross-validation scores:'</span>, scores)</span><br><span class="line">print(<span class="string">'Mean cross-validation score:'</span>, scores.mean())</span><br></pre></td></tr></table></figure><figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">Cross-validation scores: [0.96666667 1.         0.96666667 0.96666667 1.        ]</span><br><span class="line">Mean cross-validation score: 0.9800000000000001</span><br></pre></td></tr></table></figure><h3 id="交叉验证与网格搜索并行">交叉验证与网格搜索并行</h3><p>虽然在许多参数上运行网格搜索和在大型数据集上运行网格搜索的计算量可能很大，但令人尴尬的是，这些计算都是<strong>并行的</strong>（parallel）。这也就是说，在一种交叉验证划分下使用特定参数设置来构建一个模型，与利用其他参数的模型是完全独立的。这使得网格搜索与交叉验证成为多个 CPU 内核或集群上并行化的理想选择。你可以将 <code>n_jobs</code> 参数设置为你想使用的 CPU 内核数量，从而在 GridSearchCV 和 <code>cross_val_score</code> 中使用多个内核。你可以设置 <code>n_jobs=-1</code> 来使用所有可用的内核。</p><p>你应该知道，<strong>scikit-learn 不允许并行操作的嵌套</strong>。因此，如果你在模型（比如随机森林）中使用了 <code>n_jobs</code> 选项，那么就不能在 GridSearchCV 使用它来搜索这个模型。如果你的数据集和模型都非常大，那么使用多个内核可能会占用大量内存，你应该在并行构建大型模型时监视内存的使用情况。</p><p>还可以在集群内的多台机器上并行运行网格搜索和交叉验证。对于 Spark 用户，可以使用 spark-sklearn 包，它允许在已经建立好的 Spark 集群上运行网格搜索。</p>]]></content>
+        <content type="html"><![CDATA[<p>找到一个模型的重要参数（提供最佳泛化性能的参数）的取值是一项棘手的任务，但对于几乎所有模型和数据集来说都是必要的。由于这项任务如此常见，所以 scikit-learn 中有一些标准方法可以帮你完成。最常见的就是<strong>网格搜索</strong>（grid search），它主要指尝试我们关心的参数的所有可能组合。</p><p>考虑一个具有 RBF（径向基函数）核的核 SVM 的例子，它在 SVC 类中实现。它有 2 个重要参数：核宽度 gamma 核正则化参数 C。假设我们希望尝试 C 的取值为 0.001、0.01、0.1、1、10 和 100，gamma 也取这 6 个值，所以总共有 36 种参数组合。</p><a id="more"></a><h1 id="简单网格搜索">简单网格搜索</h1><p>我们可以实现一个简单的网格搜索，在 2 个参数上使用 for 循环，对每种参数组合分别训练并评估一个分类器。</p><figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="comment"># 简单的网格搜索实现</span></span><br><span class="line">iris = load_iris()</span><br><span class="line">X_train, X_test, y_train, y_test = train_test_split(</span><br><span class="line">    iris.data, iris.target, random_state=<span class="number">0</span>)</span><br><span class="line">print(<span class="string">'Size of training set: &#123;&#125;  size of test set: &#123;&#125;'</span>.format(</span><br><span class="line">    X_train.shape[<span class="number">0</span>], X_test.shape[<span class="number">0</span>]))</span><br><span class="line"></span><br><span class="line">best_score = <span class="number">0</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">for</span> gamma <span class="keyword">in</span> [<span class="number">0.001</span>, <span class="number">0.01</span>, <span class="number">0.1</span>, <span class="number">1</span>, <span class="number">10</span>, <span class="number">100</span>]:</span><br><span class="line">    <span class="keyword">for</span> C <span class="keyword">in</span> [<span class="number">0.001</span>, <span class="number">0.01</span>, <span class="number">0.1</span>, <span class="number">1</span>, <span class="number">10</span>, <span class="number">100</span>]:</span><br><span class="line">        <span class="comment"># 对每种参数组合都训练一个SVC</span></span><br><span class="line">        svm = SVC(gamma=gamma, C=C)</span><br><span class="line">        svm.fit(X_train, y_train)</span><br><span class="line">        <span class="comment"># 在测试集上评估SVC</span></span><br><span class="line">        score = svm.score(X_test, y_test)</span><br><span class="line">        <span class="keyword">if</span> score &gt; best_score:</span><br><span class="line">            best_score = score</span><br><span class="line">            best_parameters = &#123;<span class="string">'C'</span>: C, <span class="string">'gamma'</span>: gamma&#125;</span><br><span class="line"></span><br><span class="line">print(<span class="string">'Best score: &#123;:.2f&#125;'</span>.format(best_score))</span><br><span class="line">print(<span class="string">'Best parameters: &#123;&#125;'</span>.format(best_parameters))</span><br></pre></td></tr></table></figure><figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">Size of training set: 112  size of test set: 38</span><br><span class="line">Best score: 0.97</span><br><span class="line">Best parameters: &#123;&apos;C&apos;: 100, &apos;gamma&apos;: 0.001&#125;</span><br></pre></td></tr></table></figure><h1 id="参数过拟合的风险与验证集">参数过拟合的风险与验证集</h1><p>看到这个结果，我们可能忍不住要报告，我们找到了一个在数据集上精度达到 97% 的模型。然而，这种说法可能过于乐观了（或者就是错误的），其原因如下：我们尝试了许多不同的参数，并选择了在测试集上精度最高的那个，但这个精度不一定能推广到新数据上。<strong>由于我们使用测试数据进行调参，所以不能再用它来评估模型的好坏。</strong>我们最开始需要将数据划分为训练集和测试集也是因为这个原因。<strong>我们需要一个独立的数据集来进行评估，一个在创建模型时没有用到的数据集。</strong></p><p>为了解决这个问题，一种方法是再次划分数据，这样我们得到了 3 个数据集：用于构建模型的训练集，用于选择模型的验证集（开发集），用于评估所选参数性能的测试集。</p><figure class="highlight python"><table><tr><td class="code"><pre><span class="line">mglearn.plots.plot_threefold_split()</span><br></pre></td></tr></table></figure><p><img src="/uploads/image/introduction-to-ml-with-python/threefold-split.png"></p><p><strong>利用验证集选定最佳参数之后，我们可以找到的参数设置重新构建一个模型，但是要同时在训练数据和验证数据上进行训练。</strong>这样我们可以利用尽可能多的数据来构建模型。</p><figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="comment"># 将数据划分为训练+验证集与测试集</span></span><br><span class="line">X_trainval, X_test, y_trainval, y_test = train_test_split(</span><br><span class="line">    iris.data, iris.target, random_state=<span class="number">0</span>)</span><br><span class="line"><span class="comment"># 将训练+验证集划分为训练集和验证集</span></span><br><span class="line">X_train, X_valid, y_train, y_valid = train_test_split(</span><br><span class="line">    X_trainval, y_trainval, random_state=<span class="number">1</span>)</span><br><span class="line">print(<span class="string">'Size of training set: &#123;&#125;  size of validation set: &#123;&#125;  size of test set: &#123;&#125;'</span>.format(</span><br><span class="line">    X_train.shape[<span class="number">0</span>], X_valid.shape[<span class="number">0</span>], X_test.shape[<span class="number">0</span>]))</span><br><span class="line"></span><br><span class="line">best_score = <span class="number">0</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">for</span> gamma <span class="keyword">in</span> [<span class="number">0.001</span>, <span class="number">0.01</span>, <span class="number">0.1</span>, <span class="number">1</span>, <span class="number">10</span>, <span class="number">100</span>]:</span><br><span class="line">    <span class="keyword">for</span> C <span class="keyword">in</span> [<span class="number">0.001</span>, <span class="number">0.01</span>, <span class="number">0.1</span>, <span class="number">1</span>, <span class="number">10</span>, <span class="number">100</span>]:</span><br><span class="line">        <span class="comment"># 对每种参数组合都训练一个SVC</span></span><br><span class="line">        svm = SVC(gamma=gamma, C=C)</span><br><span class="line">        svm.fit(X_train, y_train)</span><br><span class="line">        <span class="comment"># 在测试集上评估SVC</span></span><br><span class="line">        score = svm.score(X_valid, y_valid)</span><br><span class="line">        <span class="keyword">if</span> score &gt; best_score:</span><br><span class="line">            best_score = score</span><br><span class="line">            best_parameters = &#123;<span class="string">'C'</span>: C, <span class="string">'gamma'</span>: gamma&#125;</span><br><span class="line"><span class="comment"># 在训练+验证集上重新构建一个模型，并在测试集上进行评估</span></span><br><span class="line">svm = SVC(**best_parameters)</span><br><span class="line">svm.fit(X_trainval, y_trainval)</span><br><span class="line">test_score = svm.score(X_test, y_test)</span><br><span class="line">print(<span class="string">'Best score on validation set: &#123;:.2f&#125;'</span>.format(best_score))</span><br><span class="line">print(<span class="string">'Best parameters: &#123;&#125;'</span>.format(best_parameters))</span><br><span class="line">print(<span class="string">'Test set score with best parameters: &#123;:.2f&#125;'</span>.format(test_score))</span><br></pre></td></tr></table></figure><figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">Size of training set: 84  size of validation set: 28  size of test set: 38</span><br><span class="line">Best score on validation set: 0.96</span><br><span class="line">Best parameters: &#123;&apos;C&apos;: 10, &apos;gamma&apos;: 0.001&#125;</span><br><span class="line">Test set score with best parameters: 0.92</span><br></pre></td></tr></table></figure><p>验证集上的最高分数是 96%，这比之前略低，可能是因为我们使用了更少的数据来训练模型。测试集上的分数更低，为 92%。因此，我们只能声称对 92% 的新数据正确分类，而不是我们之前认为的 97%。</p><p>训练集、验证集和测试集之间的区别对于在实践中应用机器学习方法至关重要。任何根据测试集精度所做的选择都会将测试集的信息“泄漏”（leak）到模型中。因此，<strong>保留一个单独的测试集是很重要的，它仅用于最终评估。</strong>严格来说，在测试集上对不止一个模型进行评估并选择更好的那个，将会导致对模型精度过于乐观的估计。</p><h1 id="带交叉验证的网格搜索">带交叉验证的网格搜索</h1><p>虽然将数据划分为训练集、验证集和测试集的方法是可行的，也相对常用，但这种方法对数据的划分方法相当敏感。为了得到对泛化性能的更好估计，我们可以使用交叉验证来评估每种参数组合的性能，而不是仅将数据单次划分为训练集与验证集。</p><figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="keyword">for</span> gamma <span class="keyword">in</span> [<span class="number">0.001</span>, <span class="number">0.01</span>, <span class="number">0.1</span>, <span class="number">1</span>, <span class="number">10</span>, <span class="number">100</span>]:</span><br><span class="line">    <span class="keyword">for</span> C <span class="keyword">in</span> [<span class="number">0.001</span>, <span class="number">0.01</span>, <span class="number">0.1</span>, <span class="number">1</span>, <span class="number">10</span>, <span class="number">100</span>]:</span><br><span class="line">        <span class="comment"># 对每种参数组合都训练一个SVC</span></span><br><span class="line">        svm = SVC(gamma=gamma, C=C)</span><br><span class="line">        svm.fit(X_train, y_train)</span><br><span class="line">        <span class="comment"># 执行交叉验证</span></span><br><span class="line">        scores = cross_val_score(svm, X_trainval, y_trainval, cv=<span class="number">5</span>)</span><br><span class="line">        <span class="comment"># 计算交叉验证的平均精度</span></span><br><span class="line">        score = np.mean(scores)</span><br><span class="line">        <span class="keyword">if</span> score &gt; best_score:</span><br><span class="line">            best_score = score</span><br><span class="line">            best_parameters = &#123;<span class="string">'C'</span>: C, <span class="string">'gamma'</span>: gamma&#125;</span><br><span class="line"><span class="comment"># 在训练+验证集上重新构建一个模型，并在测试集上进行评估</span></span><br><span class="line">svm = SVC(**best_parameters)</span><br><span class="line">svm.fit(X_trainval, y_trainval)</span><br></pre></td></tr></table></figure><p>要想使用 5 折交叉验证对 C 和 gamma 特定取值的 SVM 的精度进行评估，需要训练 36 x 5 = 180 个模型。你可以想象，使用交叉验证的主要缺点就是训练所有这些模型所需花费的时间。</p><p>下面的可视化说明了上述代码如何选择最佳参数设置。</p><figure class="highlight python"><table><tr><td class="code"><pre><span class="line">mglearn.plots.plot_cross_val_selection()</span><br></pre></td></tr></table></figure><p><img src="/uploads/image/introduction-to-ml-with-python/cross-val-grid-search.png"></p><p>对于每种参数设置（图中仅显示了一部分），需要计算 5 个精度值，交叉验证的每次划分都要计算一个精度值。然后，对每种参数设置计算平均验证精度。最后，选择平均验证精度最高的参数，用圆圈标记。</p><blockquote><p>交叉验证是在特定数据集上对给定模型进行评估的一种方法。但它通常与网格搜索等参数搜索方法结合使用。因此，许多人使用<strong>交叉验证</strong>（cross-validation）这一术语来通俗地指代带交叉验证的网格搜索。</p></blockquote><p>由于带交叉验证的网格搜索是一种常用的调参方法，因此 scikit-learn 提供了 GridSearchCV 类，它以估计器（estimator）的形式实现了这种方法。要使用 GridSearchCV 类，你首先需要用一个字典指定要搜索的参数。然后 GridSearchCV 会执行所有必要的模型拟合。字典的键是我们要调节的参数名称，字典的值是我们想要尝试的参数设置。</p><figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="comment"># 如果 C 和 gamma 想要尝试的取值为 0.001、0.01、0.1、1、10 和 100</span></span><br><span class="line"><span class="comment"># 可以将其转化为下面这个字典</span></span><br><span class="line">param_grid = &#123;<span class="string">'C'</span>: [<span class="number">0.001</span>, <span class="number">0.01</span>, <span class="number">0.1</span>, <span class="number">1</span>, <span class="number">10</span>, <span class="number">100</span>],</span><br><span class="line">              <span class="string">'gamma'</span>: [<span class="number">0.001</span>, <span class="number">0.01</span>, <span class="number">0.1</span>, <span class="number">1</span>, <span class="number">10</span>, <span class="number">100</span>]&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">from</span> sklearn.model_selection <span class="keyword">import</span> GridSearchCV</span><br><span class="line"><span class="comment"># 将 GridSearchCV 实例化</span></span><br><span class="line">grid_search = GridSearchCV(SVC(), param_grid, cv=<span class="number">5</span>)</span><br><span class="line"></span><br><span class="line"><span class="comment"># GridSearchCV 将使用交叉验证来代替之前的划分训练集和验证集方法</span></span><br><span class="line"><span class="comment"># 但是，我们仍需要将数据划分为训练集和测试集，以避免参数过拟合</span></span><br><span class="line">X_train, X_test, y_train, y_test = train_test_split(</span><br><span class="line">    iris.data, iris.target, random_state=<span class="number">0</span>)</span><br><span class="line"></span><br><span class="line"><span class="comment"># 创建的 grid_search 对象的行为就像一个分类器</span></span><br><span class="line"><span class="comment"># 我们可以对它调用标准的 fit、predict 和 score 方法</span></span><br><span class="line"><span class="comment"># 但我们在调用 fit 时，它会对 param_grid 指定的每种参数组合都运行交叉验证</span></span><br><span class="line">grid_search.fit(X_train, y_train)</span><br><span class="line"></span><br><span class="line"><span class="comment"># 拟合 GridSearchCV 对象不仅会搜索最佳参数，还会利用得到的最佳参数在整个</span></span><br><span class="line"><span class="comment"># 训练数据集上自动拟合一个新模型</span></span><br><span class="line"><span class="comment"># GridSearchCV 类提供了非常方便的接口，可以用 predict 和 score 方法来访问</span></span><br><span class="line"><span class="comment"># 重新训练过的模型</span></span><br><span class="line"><span class="comment"># 为了评估找到的最佳参数的泛化能力，我们可以在测试集上调用 score</span></span><br><span class="line">print(<span class="string">'Test set score: &#123;:.2f&#125;'</span>.format(grid_search.score(X_test, y_test)))</span><br><span class="line"></span><br><span class="line"><span class="comment"># 我们找到的参数保存在 best_params_ 属性中，而交叉验证最佳精度保存在 best_score_ 中</span></span><br><span class="line">print(<span class="string">'Best parameters: &#123;&#125;'</span>.format(grid_search.best_params_))</span><br><span class="line">print(<span class="string">'Best cross-validation score: &#123;:.2f&#125;'</span>.format(grid_search.best_score_))</span><br><span class="line"></span><br><span class="line"><span class="comment"># 能够访问实际找到的模型，这有时是很有帮助的，比如查看系数或特征重要性</span></span><br><span class="line"><span class="comment"># 你可以用 best_estimator_ 属性来访问最佳参数对应的模型</span></span><br><span class="line"><span class="comment"># 由于 grid_search 本身具有 predict 和 score 方法</span></span><br><span class="line"><span class="comment"># 所以不需要使用 best_estimator_ 来进行预测和评估模型</span></span><br><span class="line">print(<span class="string">'Best estimator:\n&#123;&#125;'</span>.format(grid_search.best_estimator_))</span><br></pre></td></tr></table></figure><figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">Test set score: 0.97</span><br><span class="line">Best parameters: &#123;&apos;C&apos;: 100, &apos;gamma&apos;: 0.01&#125;</span><br><span class="line">Best cross-validation score: 0.97</span><br><span class="line">Best estimator:</span><br><span class="line">SVC(C=100, cache_size=200, class_weight=None, coef0=0.0,</span><br><span class="line">    decision_function_shape=&apos;ovr&apos;, degree=3, gamma=0.01, kernel=&apos;rbf&apos;,</span><br><span class="line">    max_iter=-1, probability=False, random_state=None, shrinking=True,</span><br><span class="line">    tol=0.001, verbose=False)</span><br></pre></td></tr></table></figure><p>利用交叉验证选择参数，我们实际上找到了一个在测试集上精度为 97% 的模型。重要的是，我们<strong>没有使用测试集</strong>在选择参数。</p><p>注意不要将 <code>best_score_</code> 与 模型在测试集上调用 <code>score</code> 方法计算得到的泛化性能弄混。使用 <code>score</code> 方法（或者对 <code>predict</code> 方法的输出结果进行评估）采用的是<strong>在整个训练集上</strong>训练的模型。而 <code>best_score_</code> 属性保存的是交叉验证的平均精度，是<strong>在训练集上进行交叉验证</strong>得到的。</p><h2 id="分析交叉验证的结果">分析交叉验证的结果</h2><p>将交叉验证的结果可视化通常有助于理解模型泛化能力对所搜索参数的依赖关系。由于运行网格搜索的计算成本相当高，所以通常最好从相对比较稀疏且较小的网格开始搜索。然后我们可以检查交叉验证网格搜索的结果，可能也会扩展搜索范围。网格搜索的结果可以在 <code>cv_results_</code> 属性中找到，它是一个字典，其中保存了搜索的所有内容。它里面包含许多细节，最好将其转换成 pandas 数据框后查看：</p><figure class="highlight python"><table><tr><td class="code"><pre><span class="line">results = pd.DataFrame(grid_search.cv_results_)</span><br><span class="line"><span class="comment"># 显示前 5 行</span></span><br><span class="line">display(results.head())</span><br></pre></td></tr></table></figure><figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">   mean_fit_time  std_fit_time  ...  std_test_score  rank_test_score</span><br><span class="line">0       0.000551      0.000136  ...        0.011371               22</span><br><span class="line">1       0.000453      0.000039  ...        0.011371               22</span><br><span class="line">2       0.000471      0.000039  ...        0.011371               22</span><br><span class="line">3       0.000438      0.000004  ...        0.011371               22</span><br><span class="line">4       0.000459      0.000028  ...        0.011371               22</span><br><span class="line"></span><br><span class="line">[5 rows x 15 columns]</span><br></pre></td></tr></table></figure><p>results 中每一行对应一种特定的参数设置。对于每种参数设置，交叉验证所有划分的结果都被记录下来，所有划分的平均值和标准差也被记录下来。由于我们搜索的是一个二维参数网格（C 和 gamma），所以最适合用热图可视化。我们首先提取平均验证分数，然后改变分数数组的形状，使其坐标轴分别对应于 C 和 gamma：</p><figure class="highlight python"><table><tr><td class="code"><pre><span class="line">scores = np.array(results.mean_test_score).reshape(<span class="number">6</span>, <span class="number">6</span>)</span><br><span class="line"><span class="comment"># 对交叉验证平均分数作图</span></span><br><span class="line">mglearn.tools.heatmap(scores, xlabel=<span class="string">'gamma'</span>, xticklabels=param_grid[<span class="string">'gamma'</span>],</span><br><span class="line">    ylabel=<span class="string">'C'</span>, yticklabels=param_grid[<span class="string">'C'</span>], cmap=<span class="string">'viridis'</span>)</span><br></pre></td></tr></table></figure><p><img src="/uploads/image/introduction-to-ml-with-python/grid-search-heatmap.png"></p><p>你可以看到，SVC 对参数设置非常敏感。对于许多种参数设置，精度都在 40% 左右，这是非常糟糕的；对于其他参数设置，精度约为 96%。我们可以从这张图中看出以下几点。首先，我们调节的参数对于获得良好的性能<strong>非常重要</strong>。这两个参数 都很重要，因为调节它们可以将精度从 40% 提高到 96%。此外，在我们选择的参数范围中也可以看到输出发生了显著的变化。同样重要的是要注意，参数的范围要足够大：每个参数的最佳取值不能位于图像的边界上。</p><p>下面我们来看几张图，其结果不那么理想，因为选择的搜索范围不合适。</p><figure class="highlight python"><table><tr><td class="code"><pre><span class="line"></span><br><span class="line">fig, axes = plt.subplots(<span class="number">1</span>, <span class="number">3</span>, figsize=(<span class="number">13</span>, <span class="number">5</span>))</span><br><span class="line">param_grid_linear = &#123;<span class="string">'C'</span>: np.linspace(<span class="number">1</span>, <span class="number">2</span>, <span class="number">6</span>),</span><br><span class="line">                     <span class="string">'gamma'</span>: np.linspace(<span class="number">1</span>, <span class="number">2</span>, <span class="number">6</span>)&#125;</span><br><span class="line"></span><br><span class="line">param_grid_one_log = &#123;<span class="string">'C'</span>: np.linspace(<span class="number">1</span>, <span class="number">2</span>, <span class="number">6</span>),</span><br><span class="line">                     <span class="string">'gamma'</span>: np.logspace(<span class="number">-3</span>, <span class="number">2</span>, <span class="number">6</span>)&#125;</span><br><span class="line"></span><br><span class="line">param_grid_range = &#123;<span class="string">'C'</span>: np.logspace(<span class="number">-3</span>, <span class="number">2</span>, <span class="number">6</span>),</span><br><span class="line">                     <span class="string">'gamma'</span>: np.logspace(<span class="number">-7</span>, <span class="number">-2</span>, <span class="number">6</span>)&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">for</span> param_grid, ax <span class="keyword">in</span> zip([param_grid_linear, param_grid_one_log,</span><br><span class="line">                           param_grid_range], axes):</span><br><span class="line">    grid_search = GridSearchCV(SVC(), param_grid, cv=<span class="number">5</span>)</span><br><span class="line">    grid_search.fit(X_train, y_train)</span><br><span class="line">    scores = grid_search.cv_results_[<span class="string">'mean_test_score'</span>].reshape(<span class="number">6</span>, <span class="number">6</span>)</span><br><span class="line"></span><br><span class="line">    scores_image = mglearn.tools.heatmap(scores, xlabel=<span class="string">'gamma'</span>,</span><br><span class="line">        ylabel=<span class="string">'C'</span>, xticklabels=param_grid[<span class="string">'gamma'</span>],</span><br><span class="line">        yticklabels=param_grid[<span class="string">'C'</span>], cmap=<span class="string">'viridis'</span>, ax=ax)</span><br><span class="line"></span><br><span class="line">plt.colorbar(scores_image, ax=axes.tolist())</span><br></pre></td></tr></table></figure><p><img src="/uploads/image/introduction-to-ml-with-python/grid-search-heatmaps.png"></p><p>第一张图没有显示任何变化。在这种情况下，这是由参数 C 和 gamma 不正确的缩放以及不正确的范围造成的。但如果对于不同的参数设置都看不到精度的变化，也可能是因为这个参数根本不重要。<strong>通常最好在开始时尝试非常极端的值，以观察改变参数是否会导致精度发生变化。</strong></p><p>第二张图显示的是垂直条形模式。这表示只有 gamma 的设置对精度有影响。这可能意味着 gamma 参数的搜索范围是我们所关心的，而 C 参数并不是——也可能意味着 C 参数并不重要。</p><p>第三张图中 C 和 gamma 对应的精度都有变化。但可以看到，在图像的整个左下角都没有发生什么有趣的事情。我们在后面的网格搜索中可以不考虑非常小的值。最佳参数设置出现在右上角。由于最佳参数位于图像的边界，所以我们可以认为，在这个边界之外可能还有更好的取值，我们可能希望改变搜索范围以包含这一区域内的更多参数。</p><p>基于交叉验证分数来调节参数网格是非常好的，也是探索不同参数的重要性的好方法。但是，你不应该在最终测试集上测试不同的参数范围（在验证集上进行调参）——只有确切知道了想要使用的模型，才能对测试集进行评估（在测试集上进行评估）。</p><h2 id="在非网格的空间中搜索">在非网格的空间中搜索</h2><p>在某些情况下，尝试所有参数的所有可能组合并不是一个好主意。例如，SVC 有一个 kernel 参数，根据所选择的 kernel（内核），其他参数也是与之相关的。如果 <code>kernel='linear'</code>，那么模型是线性的，只会用到 C 参数。如果 <code>kernel='rbf'</code>，则需要使用 C 和 gamma 两个参数（但用不到类似 degree 的其他参数）。在这种情况下，搜索 C、gamma 和 kernel 所有可能的组合没有意义：如果 <code>kernel='linear'</code>，那么 gamma 是用不到的，尝试 gamma 的不同取值将会浪费时间。为了处理这种“条件”（conditional）参数，GridSearchCV 的 <code>param_grid</code> 可以是字典组成的列表。列表中每个字典可扩展为一个独立的网格。</p><figure class="highlight python"><table><tr><td class="code"><pre><span class="line">param_grid = [&#123;<span class="string">'kernel'</span>: [<span class="string">'rbf'</span>],  <span class="comment"># kernel 是一个长度为 1 的列表</span></span><br><span class="line">               <span class="string">'C'</span>: [<span class="number">0.001</span>, <span class="number">0.01</span>, <span class="number">0.1</span>, <span class="number">1</span>, <span class="number">10</span>, <span class="number">100</span>],</span><br><span class="line">               <span class="string">'gamma'</span>: [<span class="number">0.001</span>, <span class="number">0.01</span>, <span class="number">0.1</span>, <span class="number">1</span>, <span class="number">10</span>, <span class="number">100</span>]&#125;,</span><br><span class="line">              &#123;<span class="string">'kernel'</span>: [<span class="string">'linear'</span>],</span><br><span class="line">               <span class="string">'C'</span>: [<span class="number">0.001</span>, <span class="number">0.01</span>, <span class="number">0.1</span>, <span class="number">1</span>, <span class="number">10</span>, <span class="number">100</span>]&#125;]</span><br><span class="line">grid_search = GridSearchCV(SVC(), param_grid, cv=<span class="number">5</span>)</span><br><span class="line">grid_search.fit(X_train, y_train)</span><br><span class="line">print(<span class="string">'Best parameters: &#123;&#125;'</span>.format(grid_search.best_params_))</span><br><span class="line">print(<span class="string">'Best cross-validation score: &#123;:.2f&#125;'</span>.format(grid_search.best_score_))</span><br><span class="line"></span><br><span class="line">results = pd.DataFrame(grid_search.cv_results_)</span><br><span class="line"><span class="comment"># 再次查看 cv_results_，如果 kernel='linear'，那么只有 C 是变化的</span></span><br><span class="line">display(results.T)</span><br></pre></td></tr></table></figure><figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">Best parameters: &#123;&apos;C&apos;: 100, &apos;gamma&apos;: 0.01, &apos;kernel&apos;: &apos;rbf&apos;&#125;</span><br><span class="line">Best cross-validation score: 0.97</span><br><span class="line">                                                               0  ...                              41</span><br><span class="line">mean_fit_time                                        0.000518799  ...                     0.000275612</span><br><span class="line">std_fit_time                                         8.65673e-05  ...                     1.92715e-05</span><br><span class="line">mean_score_time                                      0.000243187  ...                     0.000154543</span><br><span class="line">std_score_time                                       5.89067e-05  ...                     1.61281e-06</span><br><span class="line">param_C                                                    0.001  ...                             100</span><br><span class="line">param_gamma                                                0.001  ...                             NaN</span><br><span class="line">param_kernel                                                 rbf  ...                          linear</span><br><span class="line">params             &#123;&apos;C&apos;: 0.001, &apos;gamma&apos;: 0.001, &apos;kernel&apos;: &apos;rbf&apos;&#125;  ...  &#123;&apos;C&apos;: 100, &apos;kernel&apos;: &apos;linear&apos;&#125;</span><br><span class="line">split0_test_score                                          0.375  ...                        0.958333</span><br><span class="line">split1_test_score                                       0.347826  ...                               1</span><br><span class="line">split2_test_score                                       0.363636  ...                               1</span><br><span class="line">split3_test_score                                       0.363636  ...                        0.909091</span><br><span class="line">split4_test_score                                       0.380952  ...                        0.952381</span><br><span class="line">mean_test_score                                         0.366071  ...                        0.964286</span><br><span class="line">std_test_score                                         0.0113708  ...                       0.0338387</span><br><span class="line">rank_test_score                                               27  ...                               3</span><br><span class="line"></span><br><span class="line">[16 rows x 42 columns]</span><br></pre></td></tr></table></figure><h2 id="使用不同的交叉验证策略进行网格搜索">使用不同的交叉验证策略进行网格搜索</h2><p>与 <code>cross_val_score</code> 类似，GridSearchCV 对分类问题默认使用分层 <span class="math inline">\(k\)</span> 折交叉验证，对回归问题默认使用 <span class="math inline">\(k\)</span> 折交叉验证。但是，你可以传入任何交叉验证分离器作为 GridSearchCV 的 cv 参数。特别地，如果只想将数据单词划分为训练集和验证集，你可以使用 ShuffleSplit 或 StratifiedShuffleSplit，并设置 <code>n_iter=1</code>。这对于非常大的数据集或非常慢的模型可能会有帮助。</p><h3 id="嵌套交叉验证">嵌套交叉验证</h3><p>前面在使用 GridSearchCV 时，我们仍然将数据单次划分为训练集和测试集，这可能会导致结果不稳定，也让我们过于依赖数据的此次划分。我们可以再深入一点，不是只将原始数据一次划分为训练集和测试集，而是使用交叉验证进行多次划分，这就是所谓的<strong>嵌套交叉验证</strong>（nested cross-validation）。在嵌套交叉验证中，有一个外层循环，遍历将数据划分为训练集和测试集的所有划分。对于每种划分都运行一次网格搜索（对于外层循环的每种划分可能会得到不同的最佳参数）。然后，对于每种外层划分，利用最佳参数设置计算得到测试集分数。</p><p>这一过程的结果是由分数组成的列表——不是一个模型，也不是一种参数设置。这些分数告诉我们在网格找到的最佳参数下模型的泛化能力好坏。<strong>由于嵌套交叉验证不提供可用于新数据的模型，所以在寻找可用于未来数据的预测模型时很少用到它。</strong>但是，它对于评估给定模型在特定数据集上的效果很有用。</p><p>在 scikit-learn 中实现嵌套交叉验证很简单。我们调用 <code>cross_val_score</code>，并用 GridSearchCV 的一个实例作为模型：</p><blockquote><p><a href="https://devdocs.io/scikit_learn/modules/generated/sklearn.model_selection.parametergrid#sklearn.model_selection.ParameterGrid" target="_blank" rel="noopener"><code>class sklearn.model_selection.ParameterGrid(param_grid)</code></a></p><p>Grid of parameters with a discrete number of values for each.</p><p>Can be used to iterate over parameter value combinations with the Python built-in function iter.</p><figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="meta">&gt;&gt;&gt; </span><span class="keyword">from</span> sklearn.model_selection <span class="keyword">import</span> ParameterGrid</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>param_grid = &#123;<span class="string">'a'</span>: [<span class="number">1</span>, <span class="number">2</span>], <span class="string">'b'</span>: [<span class="literal">True</span>, <span class="literal">False</span>]&#125;</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>list(ParameterGrid(param_grid)) == (</span><br><span class="line"><span class="meta">... </span>   [&#123;<span class="string">'a'</span>: <span class="number">1</span>, <span class="string">'b'</span>: <span class="literal">True</span>&#125;, &#123;<span class="string">'a'</span>: <span class="number">1</span>, <span class="string">'b'</span>: <span class="literal">False</span>&#125;,</span><br><span class="line"><span class="meta">... </span>    &#123;<span class="string">'a'</span>: <span class="number">2</span>, <span class="string">'b'</span>: <span class="literal">True</span>&#125;, &#123;<span class="string">'a'</span>: <span class="number">2</span>, <span class="string">'b'</span>: <span class="literal">False</span>&#125;])</span><br><span class="line"><span class="literal">True</span></span><br></pre></td></tr></table></figure></blockquote><figure class="highlight python"><table><tr><td class="code"><pre><span class="line">param_grid = &#123;<span class="string">'C'</span>: [<span class="number">0.001</span>, <span class="number">0.01</span>, <span class="number">0.1</span>, <span class="number">1</span>, <span class="number">10</span>, <span class="number">100</span>],</span><br><span class="line">              <span class="string">'gamma'</span>: [<span class="number">0.001</span>, <span class="number">0.01</span>, <span class="number">0.1</span>, <span class="number">1</span>, <span class="number">10</span>, <span class="number">100</span>]&#125;</span><br><span class="line"></span><br><span class="line">scores = cross_val_score(GridSearchCV(SVC(), param_grid, cv=<span class="number">5</span>),</span><br><span class="line">                         iris.data, iris.target, cv=<span class="number">5</span>)</span><br><span class="line">print(<span class="string">'Cross-validation scores:'</span>, scores)</span><br><span class="line">print(<span class="string">'Mean cross-validation score:'</span>, scores.mean())</span><br></pre></td></tr></table></figure><figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">Cross-validation scores: [0.96666667 1.         0.96666667 0.96666667 1.        ]</span><br><span class="line">Mean cross-validation score: 0.9800000000000001</span><br></pre></td></tr></table></figure><p>嵌套交叉验证的结果可以总结为 “SVC 在 iris 数据集上的交叉验证平均精度为 98%”——不多也不少（与上一个结果大致相同）。</p><p>这里我们在内层循环和外层循环中都使用了分层 5 折交叉验证。由于 <code>param_grid</code> 包含 36 中参数组合，所以需要构建 36 x 5 x 5 = 900 个模型，导致嵌套交叉验证过程的代价很高。这里我们在内层循环和外层循环中使用相同的交叉验证分离器，但这不是必需的，你可以在内层循环和外层循环中使用交叉验证策略的任意组合。理解上面单行代码的内容可能有点困难，将其展开为 for 循环可能会有所帮助，正如我么在下面这个简化的实现中所做的那样：</p><figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="keyword">from</span> sklearn.model_selection <span class="keyword">import</span> StratifiedKFold, ParameterGrid</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">nested_cv</span><span class="params">(X, y, inner_cv, outer_cv, Classifier, parameter_grid)</span>:</span></span><br><span class="line">    outer_scores = []</span><br><span class="line">    <span class="comment"># 对于外层交叉验证的每次数据划分，split方法返回索引值</span></span><br><span class="line">    <span class="keyword">for</span> training_samples, test_samples <span class="keyword">in</span> outer_cv.split(X, y):</span><br><span class="line">        <span class="comment"># 利用内层交叉验证找到最佳参数</span></span><br><span class="line">        best_params = &#123;&#125;</span><br><span class="line">        best_score = -np.inf</span><br><span class="line">        <span class="comment"># 遍历参数</span></span><br><span class="line">        <span class="keyword">for</span> parameters <span class="keyword">in</span> parameter_grid:</span><br><span class="line">            <span class="comment"># 在内层划分中累加分数</span></span><br><span class="line">            cv_scores = []</span><br><span class="line">            <span class="comment"># 遍历内层交叉验证</span></span><br><span class="line">            <span class="keyword">for</span> inner_train, inner_test <span class="keyword">in</span> inner_cv.split(X[training_samples], y[training_samples]):</span><br><span class="line">                <span class="comment"># 对于给定的参数和训练数据来构建分类器</span></span><br><span class="line">                clf = Classifier(**parameters)</span><br><span class="line">                clf.fit(X[inner_train], y[inner_train])</span><br><span class="line">                <span class="comment"># 在内层测试集上进行评估</span></span><br><span class="line">                score = clf.score(X[inner_test], y[inner_test])</span><br><span class="line">                cv_scores.append(score)</span><br><span class="line">            <span class="comment"># 计算内层交叉验证的平均分数</span></span><br><span class="line">            mean_score = np.mean(cv_scores)</span><br><span class="line">            <span class="keyword">if</span> mean_score &gt; best_score:</span><br><span class="line">                best_score = mean_score</span><br><span class="line">                best_params = parameters</span><br><span class="line">        <span class="comment"># 利用外层训练集和最佳参数来构建模型</span></span><br><span class="line">        clf = Classifier(**best_params)</span><br><span class="line">        clf.fit(X[training_samples], y[training_samples])</span><br><span class="line">        <span class="comment"># 评估模型</span></span><br><span class="line">        outer_scores.append(clf.score(X[test_samples], y[test_samples]))</span><br><span class="line">    <span class="keyword">return</span> np.array(outer_scores)</span><br><span class="line"></span><br><span class="line">scores = nested_cv(iris.data, iris.target, StratifiedKFold(<span class="number">5</span>),</span><br><span class="line">    StratifiedKFold(<span class="number">5</span>), SVC, ParameterGrid(param_grid))</span><br><span class="line">print(<span class="string">'Cross-validation scores:'</span>, scores)</span><br><span class="line">print(<span class="string">'Mean cross-validation score:'</span>, scores.mean())</span><br></pre></td></tr></table></figure><figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">Cross-validation scores: [0.96666667 1.         0.96666667 0.96666667 1.        ]</span><br><span class="line">Mean cross-validation score: 0.9800000000000001</span><br></pre></td></tr></table></figure><h3 id="交叉验证与网格搜索并行">交叉验证与网格搜索并行</h3><p>虽然在许多参数上运行网格搜索和在大型数据集上运行网格搜索的计算量可能很大，但令人尴尬的是，这些计算都是<strong>并行的</strong>（parallel）。这也就是说，在一种交叉验证划分下使用特定参数设置来构建一个模型，与利用其他参数的模型是完全独立的。这使得网格搜索与交叉验证成为多个 CPU 内核或集群上并行化的理想选择。你可以将 <code>n_jobs</code> 参数设置为你想使用的 CPU 内核数量，从而在 GridSearchCV 和 <code>cross_val_score</code> 中使用多个内核。你可以设置 <code>n_jobs=-1</code> 来使用所有可用的内核。</p><p>你应该知道，<strong>scikit-learn 不允许并行操作的嵌套</strong>。因此，如果你在模型（比如随机森林）中使用了 <code>n_jobs</code> 选项，那么就不能在 GridSearchCV 使用它来搜索这个模型。如果你的数据集和模型都非常大，那么使用多个内核可能会占用大量内存，你应该在并行构建大型模型时监视内存的使用情况。</p><p>还可以在集群内的多台机器上并行运行网格搜索和交叉验证。对于 Spark 用户，可以使用 spark-sklearn 包，它允许在已经建立好的 Spark 集群上运行网格搜索。</p>]]></content>
       
       
       <categories>
@@ -2666,7 +2713,7 @@
       
         <tags>
             
-            <tag> Introduction to Machine Learning with Python </tag>
+            <tag> Python 机器学习基础教程 </tag>
             
             <tag> grid search </tag>
             
@@ -2693,9 +2740,9 @@
       
         <tags>
             
-            <tag> dynamic programming </tag>
+            <tag> 动态规划 </tag>
             
-            <tag> recursion </tag>
+            <tag> 递归 </tag>
             
             <tag> leetcode </tag>
             
@@ -2722,7 +2769,7 @@
       
         <tags>
             
-            <tag> dynamic programming </tag>
+            <tag> 动态规划 </tag>
             
             <tag> leetcode </tag>
             
@@ -2749,7 +2796,7 @@
       
         <tags>
             
-            <tag> dynamic programming </tag>
+            <tag> 动态规划 </tag>
             
             <tag> leetcode </tag>
             
@@ -2778,7 +2825,7 @@
       
         <tags>
             
-            <tag> dynamic programming </tag>
+            <tag> 动态规划 </tag>
             
             <tag> leetcode </tag>
             
@@ -2807,7 +2854,7 @@
       
         <tags>
             
-            <tag> dynamic programming </tag>
+            <tag> 动态规划 </tag>
             
             <tag> leetcode </tag>
             
@@ -2834,7 +2881,7 @@
       
         <tags>
             
-            <tag> dynamic programming </tag>
+            <tag> 动态规划 </tag>
             
             <tag> leetcode </tag>
             
@@ -2863,7 +2910,7 @@
       
         <tags>
             
-            <tag> Introduction to Machine Learning with Python </tag>
+            <tag> Python 机器学习基础教程 </tag>
             
             <tag> cross-validation </tag>
             
@@ -2890,9 +2937,9 @@
       
         <tags>
             
-            <tag> dynamic programming </tag>
+            <tag> 动态规划 </tag>
             
-            <tag> divide and conquer </tag>
+            <tag> 分治法 </tag>
             
             <tag> leetcode </tag>
             
@@ -2919,7 +2966,7 @@
       
         <tags>
             
-            <tag> dynamic programming </tag>
+            <tag> 动态规划 </tag>
             
             <tag> leetcode </tag>
             
@@ -2946,15 +2993,13 @@
       
         <tags>
             
-            <tag> recursion </tag>
+            <tag> 递归 </tag>
             
             <tag> stack </tag>
             
-            <tag> tree </tag>
-            
             <tag> leetcode </tag>
             
-            <tag> traversal </tag>
+            <tag> 遍历 </tag>
             
             <tag> level order </tag>
             
@@ -2989,7 +3034,7 @@
       
         <tags>
             
-            <tag> dynamic programming </tag>
+            <tag> 动态规划 </tag>
             
             <tag> stack </tag>
             
@@ -3018,7 +3063,7 @@
       
         <tags>
             
-            <tag> dynamic programming </tag>
+            <tag> 动态规划 </tag>
             
             <tag> leetcode </tag>
             
@@ -3047,7 +3092,7 @@
       
         <tags>
             
-            <tag> dynamic programming </tag>
+            <tag> 动态规划 </tag>
             
             <tag> leetcode </tag>
             
@@ -3078,7 +3123,7 @@
             
             <tag> leetcode </tag>
             
-            <tag> binary search </tag>
+            <tag> 二分查找 </tag>
             
         </tags>
       
@@ -3103,7 +3148,7 @@
       
         <tags>
             
-            <tag> Introduction to Machine Learning with Python </tag>
+            <tag> Python 机器学习基础教程 </tag>
             
         </tags>
       
@@ -3178,11 +3223,11 @@
       
         <tags>
             
-            <tag> dict </tag>
-            
             <tag> sklearn </tag>
             
             <tag> special method </tag>
+            
+            <tag> dict </tag>
             
         </tags>
       
@@ -3207,9 +3252,9 @@
       
         <tags>
             
-            <tag> column generation </tag>
-            
             <tag> cplex </tag>
+            
+            <tag> column generation </tag>
             
         </tags>
       
@@ -3234,7 +3279,7 @@
       
         <tags>
             
-            <tag> Introduction to Machine Learning with Python </tag>
+            <tag> Python 机器学习基础教程 </tag>
             
             <tag> unsupervised </tag>
             
@@ -3263,7 +3308,7 @@
       
         <tags>
             
-            <tag> Introduction to Machine Learning with Python </tag>
+            <tag> Python 机器学习基础教程 </tag>
             
             <tag> unsupervised </tag>
             
@@ -3294,7 +3339,7 @@
       
         <tags>
             
-            <tag> Introduction to Machine Learning with Python </tag>
+            <tag> Python 机器学习基础教程 </tag>
             
             <tag> unsupervised </tag>
             
@@ -3325,7 +3370,7 @@
       
         <tags>
             
-            <tag> Introduction to Machine Learning with Python </tag>
+            <tag> Python 机器学习基础教程 </tag>
             
             <tag> unsupervised </tag>
             
@@ -3354,7 +3399,7 @@
       
         <tags>
             
-            <tag> Introduction to Machine Learning with Python </tag>
+            <tag> Python 机器学习基础教程 </tag>
             
             <tag> classification </tag>
             
@@ -3383,7 +3428,7 @@
       
         <tags>
             
-            <tag> Introduction to Machine Learning with Python </tag>
+            <tag> Python 机器学习基础教程 </tag>
             
             <tag> supervised </tag>
             
@@ -3414,7 +3459,7 @@
       
         <tags>
             
-            <tag> Introduction to Machine Learning with Python </tag>
+            <tag> Python 机器学习基础教程 </tag>
             
             <tag> supervised </tag>
             
@@ -3449,7 +3494,7 @@
       
         <tags>
             
-            <tag> Introduction to Machine Learning with Python </tag>
+            <tag> Python 机器学习基础教程 </tag>
             
             <tag> supervised </tag>
             
@@ -3482,7 +3527,7 @@
       
         <tags>
             
-            <tag> Introduction to Machine Learning with Python </tag>
+            <tag> Python 机器学习基础教程 </tag>
             
             <tag> supervised </tag>
             
@@ -3513,7 +3558,7 @@
       
         <tags>
             
-            <tag> Introduction to Machine Learning with Python </tag>
+            <tag> Python 机器学习基础教程 </tag>
             
             <tag> supervised </tag>
             
@@ -3550,7 +3595,7 @@
       
         <tags>
             
-            <tag> Introduction to Machine Learning with Python </tag>
+            <tag> Python 机器学习基础教程 </tag>
             
             <tag> supervised </tag>
             
@@ -3583,7 +3628,7 @@
       
         <tags>
             
-            <tag> Introduction to Machine Learning with Python </tag>
+            <tag> Python 机器学习基础教程 </tag>
             
             <tag> supervised </tag>
             
@@ -3610,7 +3655,7 @@
       
         <tags>
             
-            <tag> Fluent Python </tag>
+            <tag> 流畅的 Python </tag>
             
             <tag> metaprogramming </tag>
             
@@ -3637,7 +3682,7 @@
       
         <tags>
             
-            <tag> Fluent Python </tag>
+            <tag> 流畅的 Python </tag>
             
             <tag> attribute descriptors </tag>
             
@@ -3701,7 +3746,7 @@
             
             <tag> decorators </tag>
             
-            <tag> Fluent Python </tag>
+            <tag> 流畅的 Python </tag>
             
             <tag> property </tag>
             
@@ -3728,7 +3773,7 @@
       
         <tags>
             
-            <tag> Fluent Python </tag>
+            <tag> 流畅的 Python </tag>
             
             <tag> attribute </tag>
             
@@ -3805,7 +3850,7 @@
       
         <tags>
             
-            <tag> Fluent Python </tag>
+            <tag> 流畅的 Python </tag>
             
             <tag> concurrency </tag>
             
@@ -3834,7 +3879,7 @@
       
         <tags>
             
-            <tag> Introduction to Machine Learning with Python </tag>
+            <tag> Python 机器学习基础教程 </tag>
             
             <tag> classification </tag>
             
@@ -3863,7 +3908,7 @@
       
         <tags>
             
-            <tag> Fluent Python </tag>
+            <tag> 流畅的 Python </tag>
             
             <tag> concurrency </tag>
             
@@ -3894,7 +3939,7 @@
             
             <tag> coroutines </tag>
             
-            <tag> Fluent Python </tag>
+            <tag> 流畅的 Python </tag>
             
         </tags>
       
@@ -3921,7 +3966,7 @@
             
             <tag> coroutines </tag>
             
-            <tag> Fluent Python </tag>
+            <tag> 流畅的 Python </tag>
             
             <tag> yield </tag>
             
@@ -3948,13 +3993,9 @@
       
         <tags>
             
-            <tag> Fluent Python </tag>
+            <tag> 流畅的 Python </tag>
             
             <tag> contextlib </tag>
-            
-            <tag> with </tag>
-            
-            <tag> for/else </tag>
             
         </tags>
       
@@ -3979,7 +4020,7 @@
       
         <tags>
             
-            <tag> Fluent Python </tag>
+            <tag> 流畅的 Python </tag>
             
             <tag> generators </tag>
             
@@ -4008,7 +4049,7 @@
       
         <tags>
             
-            <tag> Fluent Python </tag>
+            <tag> 流畅的 Python </tag>
             
             <tag> generators </tag>
             
@@ -4039,7 +4080,7 @@
       
         <tags>
             
-            <tag> Fluent Python </tag>
+            <tag> 流畅的 Python </tag>
             
             <tag> overloading </tag>
             
@@ -4066,7 +4107,7 @@
       
         <tags>
             
-            <tag> Fluent Python </tag>
+            <tag> 流畅的 Python </tag>
             
             <tag> inheritance </tag>
             
@@ -4093,9 +4134,7 @@
       
         <tags>
             
-            <tag> Fluent Python </tag>
-            
-            <tag> ABC </tag>
+            <tag> 流畅的 Python </tag>
             
         </tags>
       
@@ -4120,9 +4159,7 @@
       
         <tags>
             
-            <tag> Fluent Python </tag>
-            
-            <tag> ABC </tag>
+            <tag> 流畅的 Python </tag>
             
         </tags>
       
@@ -4147,7 +4184,7 @@
       
         <tags>
             
-            <tag> Fluent Python </tag>
+            <tag> 流畅的 Python </tag>
             
             <tag> protocols </tag>
             
@@ -4174,7 +4211,7 @@
       
         <tags>
             
-            <tag> Fluent Python </tag>
+            <tag> 流畅的 Python </tag>
             
         </tags>
       
@@ -4199,7 +4236,7 @@
       
         <tags>
             
-            <tag> Fluent Python </tag>
+            <tag> 流畅的 Python </tag>
             
         </tags>
       
@@ -4224,7 +4261,7 @@
       
         <tags>
             
-            <tag> Fluent Python </tag>
+            <tag> 流畅的 Python </tag>
             
         </tags>
       
@@ -4251,7 +4288,7 @@
             
             <tag> decorators </tag>
             
-            <tag> Fluent Python </tag>
+            <tag> 流畅的 Python </tag>
             
             <tag> lru_cache </tag>
             
@@ -4282,7 +4319,7 @@
             
             <tag> decorators </tag>
             
-            <tag> Fluent Python </tag>
+            <tag> 流畅的 Python </tag>
             
         </tags>
       
@@ -4309,7 +4346,7 @@
             
             <tag> decorators </tag>
             
-            <tag> Fluent Python </tag>
+            <tag> 流畅的 Python </tag>
             
             <tag> strategy </tag>
             
@@ -4371,11 +4408,11 @@
       
         <tags>
             
-            <tag> design patterns </tag>
-            
             <tag> command </tag>
             
-            <tag> Fluent Python </tag>
+            <tag> design patterns </tag>
+            
+            <tag> 流畅的 Python </tag>
             
             <tag> first-class functions </tag>
             
@@ -4417,9 +4454,9 @@
     
     
     <entry>
-      <title>Python repr 函数</title>
-      <link href="/programming/python-repr-method/"/>
-      <url>/programming/python-repr-method/</url>
+      <title>repr 函数</title>
+      <link href="/programming/repr-method/"/>
+      <url>/programming/repr-method/</url>
       
         <content type="html"><![CDATA[<h1 id="repr">repr</h1><blockquote><p><a href="https://devdocs.io/python~3.6/library/functions#repr" target="_blank" rel="noopener"><code>repr(object)</code></a></p><p>Return a string containing a printable representation of an object. For many types, this function makes an attempt to return a string that would yield an object with the same value when passed to eval(), otherwise the representation is a string enclosed in angle brackets that contains the name of the type of the object together with additional information often including the name and address of the object.</p></blockquote><p>repr的返回结果大致有两种类型：</p><ul><li>返回一个字符串，这个字符串所代表的代码与原对象相同，即 <code>eval(repr(object) == object</code>。</li><li>返回一组尖括号，括号内包含了对象的名称和地址。</li></ul><figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="meta">&gt;&gt;&gt; </span>Student = namedtuple(<span class="string">'Student'</span>, <span class="string">'id name gender'</span>)</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>alice = Student(<span class="number">1</span>, <span class="string">'Alice'</span>, <span class="string">'female'</span>)</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>alice</span><br><span class="line">Student(id=<span class="number">1</span>, name=<span class="string">'Alice'</span>, gender=<span class="string">'female'</span>)</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>eval(repr(alice)) == alice</span><br><span class="line"><span class="literal">True</span></span><br><span class="line">&gt;&gt;&gt;</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span><span class="class"><span class="keyword">class</span> <span class="title">Person</span>:</span></span><br><span class="line"><span class="meta">... </span>    <span class="function"><span class="keyword">def</span> <span class="title">__init__</span><span class="params">(self, id, name, gender)</span>:</span></span><br><span class="line"><span class="meta">... </span>        self.id, self.name, self.gender = id, name, gender</span><br><span class="line">...</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>john = Person(<span class="number">2</span>, <span class="string">'John'</span>, <span class="string">'male'</span>)</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>john</span><br><span class="line">&lt;__main__.Person object at <span class="number">0x10bf970b8</span>&gt;</span><br></pre></td></tr></table></figure><a id="more"></a><h1 id="自定义返回值">自定义返回值</h1><p>自定义返回值只需实现 <code>__repr__</code> 方法。可以看到默认的输出是第二种，想实现类似第一种可以像下面这样做。</p><figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="meta">&gt;&gt;&gt; </span><span class="function"><span class="keyword">def</span> <span class="title">func</span><span class="params">(self)</span>:</span></span><br><span class="line"><span class="meta">... </span>    <span class="keyword">return</span> <span class="string">"%s(%s)"</span> % (self.__class__.__name__, <span class="string">', '</span>.join(<span class="string">'%s=%r'</span> % (k, v) <span class="keyword">for</span> k, v <span class="keyword">in</span> self.__dict__.items()))</span><br><span class="line">...</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>Person.__repr__ = func</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>john</span><br><span class="line">Person(id=<span class="number">2</span>, name=<span class="string">'John'</span>, gender=<span class="string">'male'</span>)</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>eval(repr(john)) == john</span><br><span class="line"><span class="literal">False</span>                  <span class="comment"># 不相等是因为没有定义__eq__</span></span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>eval(repr(john))   <span class="comment"># 但内容是相同的</span></span><br><span class="line">Person(id=<span class="number">2</span>, name=<span class="string">'John'</span>, gender=<span class="string">'male'</span>)</span><br></pre></td></tr></table></figure><p>优点：对简单类通用。</p><p>缺点：可能会输出不希望被看到的私有属性。如果内部变量有循环引用的话会陷入无限递归。</p><figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="meta">&gt;&gt;&gt; </span>marry = Person(id=<span class="number">2</span>, name=<span class="string">'John'</span>, gender=<span class="string">'male'</span>)</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>john = Person(<span class="number">2</span>, <span class="string">'John'</span>, <span class="string">'male'</span>)</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>marry._sepouse = john  <span class="comment"># 不想被看到的信息</span></span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>marry</span><br><span class="line">Person(id=<span class="number">3</span>, name=<span class="string">'Marry'</span>, gender=<span class="string">'female'</span>, _sepouse=Person(id=<span class="number">2</span>, name=<span class="string">'John'</span>, gender=<span class="string">'male'</span>))</span><br><span class="line">&gt;&gt;&gt;</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>john._sepouse = marry  <span class="comment"># 互相引用</span></span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>john  <span class="comment"># 无限递归</span></span><br><span class="line">Traceback (most recent call last):</span><br><span class="line">  File <span class="string">"&lt;stdin&gt;"</span>, line <span class="number">1</span>, <span class="keyword">in</span> &lt;module&gt;</span><br><span class="line">  File <span class="string">"&lt;stdin&gt;"</span>, line <span class="number">2</span>, <span class="keyword">in</span> func</span><br><span class="line">  ...  <span class="comment"># 省略</span></span><br><span class="line">  File <span class="string">"&lt;stdin&gt;"</span>, line <span class="number">2</span>, <span class="keyword">in</span> &lt;genexpr&gt;</span><br><span class="line">RecursionError: maximum recursion depth exceeded</span><br></pre></td></tr></table></figure><h1 id="隐藏私有属性">隐藏私有属性</h1><p>常用做法：指定传入的字典即可。</p><figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="meta">&gt;&gt;&gt; </span><span class="class"><span class="keyword">class</span> <span class="title">Person</span>:</span></span><br><span class="line"><span class="meta">... </span>    <span class="function"><span class="keyword">def</span> <span class="title">__init__</span><span class="params">(self, id, name, gender)</span>:</span></span><br><span class="line"><span class="meta">... </span>        self.id, self.name, self.gender = id, name, gender</span><br><span class="line"><span class="meta">... </span>    <span class="function"><span class="keyword">def</span> <span class="title">__repr__</span><span class="params">(self)</span>:</span></span><br><span class="line"><span class="meta">... </span>        <span class="keyword">return</span> <span class="string">"%s(%s)"</span> % (self.__class__.__name__, <span class="string">', '</span>.join(<span class="string">'%s=%r'</span> % (k, v) <span class="keyword">for</span> k, v <span class="keyword">in</span> self.get_params().items()))</span><br><span class="line"><span class="meta">... </span>    <span class="function"><span class="keyword">def</span> <span class="title">get_params</span><span class="params">(self)</span>:</span></span><br><span class="line"><span class="meta">... </span>        <span class="keyword">return</span> dict(id=self.id, name=self.name, gender=self.gender)</span><br><span class="line">...</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>Person(id=<span class="number">2</span>, name=<span class="string">'John'</span>, gender=<span class="string">'male'</span>)</span><br><span class="line">Person(id=<span class="number">2</span>, name=<span class="string">'John'</span>, gender=<span class="string">'male'</span>)</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>john = Person(id=<span class="number">2</span>, name=<span class="string">'John'</span>, gender=<span class="string">'male'</span>)</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>marry = Person(id=<span class="number">2</span>, name=<span class="string">'John'</span>, gender=<span class="string">'male'</span>)</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>john._sepouse = marry</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>marry._sepouse = john</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>john</span><br><span class="line">Person(id=<span class="number">2</span>, name=<span class="string">'John'</span>, gender=<span class="string">'male'</span>)</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>marry</span><br><span class="line">Person(id=<span class="number">2</span>, name=<span class="string">'John'</span>, gender=<span class="string">'male'</span>)</span><br></pre></td></tr></table></figure><h1 id="避免无限递归">避免无限递归</h1><p>reprlib 提供了一个装饰器，能检测递归调用，并用指定的字符代替调用。</p><blockquote><p><a href="https://devdocs.io/python~3.6/library/reprlib#reprlib.recursive_repr" target="_blank" rel="noopener"><code>@reprlib.recursive_repr(fillvalue=&quot;...&quot;)</code></a></p><p>Decorator for <code>__repr__()</code> methods to detect recursive calls within the same thread. If a recursive call is made, the fillvalue is returned, otherwise, the usual <code>__repr__()</code> call is made.</p></blockquote><figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="meta">&gt;&gt;&gt; </span><span class="class"><span class="keyword">class</span> <span class="title">Person</span>:</span></span><br><span class="line"><span class="meta">... </span>    <span class="function"><span class="keyword">def</span> <span class="title">__init__</span><span class="params">(self, id, name, gender)</span>:</span></span><br><span class="line"><span class="meta">... </span>        self.id, self.name, self.gender = id, name, gender</span><br><span class="line"><span class="meta">... </span>    @reprlib.recursive_repr()  <span class="comment"># 因为装饰器有参数，所以必须加上()</span></span><br><span class="line"><span class="meta">... </span>    <span class="function"><span class="keyword">def</span> <span class="title">__repr__</span><span class="params">(self)</span>:</span></span><br><span class="line"><span class="meta">... </span>        <span class="keyword">return</span> <span class="string">'%s(%s)'</span> % (type(self).__name__, <span class="string">', '</span>.join(<span class="string">'%s=%r'</span> % (k, v) <span class="keyword">for</span> k, v <span class="keyword">in</span> self.__dict__.items()))</span><br><span class="line">...</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>marry = Person(id=<span class="number">2</span>, name=<span class="string">'John'</span>, gender=<span class="string">'male'</span>)</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>john = Person(<span class="number">2</span>, <span class="string">'John'</span>, <span class="string">'male'</span>)</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>marry</span><br><span class="line">Person(id=<span class="number">2</span>, name=<span class="string">'John'</span>, gender=<span class="string">'male'</span>)  <span class="comment"># 无递归调用时</span></span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>marry._sepouse = john</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>john._sepouse = marry  <span class="comment"># 有递归调用</span></span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>marry</span><br><span class="line">Person(id=<span class="number">2</span>, name=<span class="string">'John'</span>, gender=<span class="string">'male'</span>, _sepouse=Person(id=<span class="number">2</span>, name=<span class="string">'John'</span>, gender=<span class="string">'male'</span>, _sepouse=...))</span><br></pre></td></tr></table></figure><h1 id="规避过长的描述">规避过长的描述</h1><p><code>repr()</code> 函数的目的是方便程序员检查、调试程序。如果对象的属性中包含过长的列表、字符串等属性，朴素的 <code>repr()</code> 函数会打印全部内容。其结果会在控制台或日志文件中占据大量篇幅，与初衷相悖。此时推荐的做法是输出其简略的字符串表示形式。万幸，我们无需重复造轮子，也不一定造地好。<code>reprlib.repr()</code> 函数能帮我们达到预期的结果。</p><blockquote><p><a href="https://devdocs.io/python~3.6/library/reprlib#reprlib.repr" target="_blank" rel="noopener"><code>reprlib.repr(obj)</code></a></p><p>This is the repr() method of aRepr. It returns a string similar to that returned by the built-in function of the same name, but with limits on most sizes.</p></blockquote><figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="meta">&gt;&gt;&gt; </span><span class="keyword">import</span> numpy <span class="keyword">as</span> np</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>a = np.array(range(<span class="number">10000</span>))</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>a  <span class="comment"># numpy就做了类似处理</span></span><br><span class="line">array([   <span class="number">0</span>,    <span class="number">1</span>,    <span class="number">2</span>, ..., <span class="number">9997</span>, <span class="number">9998</span>, <span class="number">9999</span>])</span><br><span class="line">&gt;&gt;&gt;</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span><span class="keyword">import</span> reprlib</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>b = list(range(<span class="number">10000</span>))</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>reprlib.repr(b)</span><br><span class="line"><span class="string">'[0, 1, 2, 3, 4, 5, ...]'</span></span><br></pre></td></tr></table></figure><figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="meta">&gt;&gt;&gt; </span><span class="keyword">import</span> reprlib</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span><span class="class"><span class="keyword">class</span> <span class="title">Text</span>:</span></span><br><span class="line"><span class="meta">... </span>    <span class="function"><span class="keyword">def</span> <span class="title">__init__</span><span class="params">(self, content)</span>:</span></span><br><span class="line"><span class="meta">... </span>        self.content = content</span><br><span class="line"><span class="meta">... </span>    <span class="function"><span class="keyword">def</span> <span class="title">__repr__</span><span class="params">(self)</span>:</span></span><br><span class="line"><span class="meta">... </span>        <span class="keyword">return</span> <span class="string">'Text(%s)'</span> % reprlib.repr(self.content)</span><br><span class="line">...</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>t = Text(<span class="string">'The beginning to learn a programming language is to print "Hello World!"'</span>)</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>t</span><br><span class="line">Text(<span class="string">'The beginnin...Hello World!"'</span>)</span><br></pre></td></tr></table></figure>]]></content>
       
@@ -4433,7 +4470,7 @@
       
         <tags>
             
-            <tag> python </tag>
+            <tag> Python </tag>
             
             <tag> repr </tag>
             
@@ -4460,7 +4497,7 @@
       
         <tags>
             
-            <tag> Fluent Python </tag>
+            <tag> 流畅的 Python </tag>
             
             <tag> first-class functions </tag>
             
@@ -4487,7 +4524,7 @@
       
         <tags>
             
-            <tag> Fluent Python </tag>
+            <tag> 流畅的 Python </tag>
             
             <tag> parameters </tag>
             
@@ -4514,7 +4551,7 @@
       
         <tags>
             
-            <tag> Fluent Python </tag>
+            <tag> 流畅的 Python </tag>
             
             <tag> functional programming </tag>
             
@@ -4543,7 +4580,7 @@
             
             <tag> dict </tag>
             
-            <tag> Fluent Python </tag>
+            <tag> 流畅的 Python </tag>
             
             <tag> defaultdict </tag>
             
@@ -4572,7 +4609,7 @@
       
         <tags>
             
-            <tag> Fluent Python </tag>
+            <tag> 流畅的 Python </tag>
             
             <tag> bisect </tag>
             
@@ -4601,7 +4638,7 @@
       
         <tags>
             
-            <tag> Fluent Python </tag>
+            <tag> 流畅的 Python </tag>
             
             <tag> sorted </tag>
             
@@ -4628,7 +4665,7 @@
       
         <tags>
             
-            <tag> Fluent Python </tag>
+            <tag> 流畅的 Python </tag>
             
             <tag> slicing </tag>
             
@@ -4639,9 +4676,9 @@
     
     
     <entry>
-      <title>Python map filter 函数</title>
-      <link href="/programming/python-map-filter-methods/"/>
-      <url>/programming/python-map-filter-methods/</url>
+      <title>map filter 函数</title>
+      <link href="/programming/map-filter-methods/"/>
+      <url>/programming/map-filter-methods/</url>
       
         <content type="html"><![CDATA[<h1 id="map">map</h1><blockquote><p><a href="https://devdocs.io/python~3.6/library/functions#map" target="_blank" rel="noopener"><code>map(function, iterable, ...)</code></a></p></blockquote><p>将 iterable 中的元素依次传入 function，返回 function 的返回值。相当于</p><figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">map</span><span class="params">(function, *iterable)</span>:</span></span><br><span class="line">    <span class="keyword">for</span> e <span class="keyword">in</span> zip(*iterable):</span><br><span class="line">        <span class="keyword">yield</span> function(*e)</span><br></pre></td></tr></table></figure><a id="more"></a><figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="comment"># 类型转换</span></span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>list(map(int, <span class="string">'0123456789'</span>))</span><br><span class="line">[<span class="number">0</span>, <span class="number">1</span>, <span class="number">2</span>, <span class="number">3</span>, <span class="number">4</span>, <span class="number">5</span>, <span class="number">6</span>, <span class="number">7</span>, <span class="number">8</span>, <span class="number">9</span>]</span><br><span class="line"></span><br><span class="line"><span class="comment"># 对应位置两数相加。当列表长度不一致时，按照最小的那个长度算。</span></span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>list(map(<span class="keyword">lambda</span> x, y: x + y, [<span class="number">1</span>, <span class="number">2</span>, <span class="number">3</span>, <span class="number">4</span>, <span class="number">5</span>], [<span class="number">1</span>, <span class="number">2</span>, <span class="number">3</span>, <span class="number">4</span>]))</span><br><span class="line">[<span class="number">2</span>, <span class="number">4</span>, <span class="number">6</span>, <span class="number">8</span>]</span><br><span class="line"></span><br><span class="line"><span class="comment"># map 的良好替代：列表推导</span></span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>[int(i) <span class="keyword">for</span> i <span class="keyword">in</span> <span class="string">'0123456789'</span>]</span><br><span class="line">[<span class="number">0</span>, <span class="number">1</span>, <span class="number">2</span>, <span class="number">3</span>, <span class="number">4</span>, <span class="number">5</span>, <span class="number">6</span>, <span class="number">7</span>, <span class="number">8</span>, <span class="number">9</span>]</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>[x + y <span class="keyword">for</span> x, y <span class="keyword">in</span> zip(range(<span class="number">1</span>, <span class="number">6</span>), range(<span class="number">1</span>, <span class="number">5</span>))]</span><br><span class="line">[<span class="number">2</span>, <span class="number">4</span>, <span class="number">6</span>, <span class="number">8</span>]</span><br></pre></td></tr></table></figure><h1 id="filter">filter</h1><blockquote><p><a href="https://devdocs.io/python~3.6/library/functions#filter" target="_blank" rel="noopener"><code>filter(function, iterable)</code></a></p></blockquote><p>将 iterable 中的元素依次传入 function，返回 function 的返回值为真时的元素。</p><p>当 <code>function != None</code> 时，相当于 <code>(item for item in iterable if function(item))</code>；</p><p>当 <code>function == None</code> 时，相当于 <code>(item for item in iterable if item)</code>。</p><figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="comment"># 返回10以下的偶数</span></span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>list(filter(<span class="keyword">lambda</span> x: x % <span class="number">2</span> == <span class="number">0</span>, range(<span class="number">11</span>)))</span><br><span class="line">[<span class="number">0</span>, <span class="number">2</span>, <span class="number">4</span>, <span class="number">6</span>, <span class="number">8</span>, <span class="number">10</span>]</span><br><span class="line"></span><br><span class="line"><span class="comment"># 列表推导也是filter的良好替代</span></span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>[x <span class="keyword">for</span> x <span class="keyword">in</span> range(<span class="number">11</span>) <span class="keyword">if</span> x % <span class="number">2</span> == <span class="number">0</span>]</span><br><span class="line">[<span class="number">0</span>, <span class="number">2</span>, <span class="number">4</span>, <span class="number">6</span>, <span class="number">8</span>, <span class="number">10</span>]</span><br></pre></td></tr></table></figure><h1 id="组合使用">组合使用</h1><figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="comment"># 选出小于10的偶数，并转成字符串类型</span></span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>list(map(str, filter(<span class="keyword">lambda</span> x: x % <span class="number">2</span> ==<span class="number">0</span>, range(<span class="number">10</span>))))</span><br><span class="line">[<span class="string">'0'</span>, <span class="string">'2'</span>, <span class="string">'4'</span>, <span class="string">'6'</span>, <span class="string">'8'</span>]</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>[str(i) <span class="keyword">for</span> i <span class="keyword">in</span> range(<span class="number">10</span>) <span class="keyword">if</span> i % <span class="number">2</span> == <span class="number">0</span>]</span><br><span class="line">[<span class="string">'0'</span>, <span class="string">'2'</span>, <span class="string">'4'</span>, <span class="string">'6'</span>, <span class="string">'8'</span>]</span><br><span class="line"></span><br><span class="line"><span class="comment"># 反过来，将代表数值小于10的字符串转成int，再选出其中的偶数。</span></span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>list(filter(<span class="keyword">lambda</span> x: x % <span class="number">2</span> == <span class="number">0</span>, map(int, <span class="string">'0123456789'</span>)))</span><br><span class="line">[<span class="number">0</span>, <span class="number">2</span>, <span class="number">4</span>, <span class="number">6</span>, <span class="number">8</span>]</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>[int(i) <span class="keyword">for</span> i <span class="keyword">in</span> <span class="string">'0123456789'</span> <span class="keyword">if</span> int(i) % <span class="number">2</span> == <span class="number">0</span>]</span><br><span class="line">[<span class="number">0</span>, <span class="number">2</span>, <span class="number">4</span>, <span class="number">6</span>, <span class="number">8</span>]</span><br></pre></td></tr></table></figure>]]></content>
       
@@ -4655,7 +4692,7 @@
       
         <tags>
             
-            <tag> python </tag>
+            <tag> Python </tag>
             
         </tags>
       
@@ -4680,7 +4717,7 @@
       
         <tags>
             
-            <tag> Fluent Python </tag>
+            <tag> 流畅的 Python </tag>
             
             <tag> special methods </tag>
             
@@ -4707,7 +4744,7 @@
       
         <tags>
             
-            <tag> python </tag>
+            <tag> Python </tag>
             
             <tag> jupyter notebook </tag>
             
@@ -4734,7 +4771,7 @@
       
         <tags>
             
-            <tag> Introduction to Algorithms </tag>
+            <tag> 算法导论 </tag>
             
             <tag> data structures </tag>
             
@@ -4805,9 +4842,9 @@
     
     
     <entry>
-      <title>Python迭代器与生成器</title>
-      <link href="/programming/python-iterator-generator/"/>
-      <url>/programming/python-iterator-generator/</url>
+      <title>迭代器与生成器</title>
+      <link href="/programming/iterator-and-generator/"/>
+      <url>/programming/iterator-and-generator/</url>
       
         <content type="html"><![CDATA[<h1 id="迭代器">迭代器</h1><p>迭代是访问集合元素的一种方式。迭代器从集合的第一个元素开始访问，直到所有元素被访问完。迭代器只能往前访问，不能后退。字符串，列表，集合等集合对象都可用于创建迭代器。</p><p>多数情况下，更倾向于通过以下方式遍历集合：</p><figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="meta">&gt;&gt;&gt; </span>a = &#123;<span class="number">1</span>,<span class="number">2</span>,<span class="number">3</span>&#125;</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span><span class="keyword">for</span> i <span class="keyword">in</span> a:</span><br><span class="line"><span class="meta">... </span>    print(i, end=<span class="string">' '</span>)</span><br><span class="line"><span class="meta">... </span><span class="keyword">else</span>:</span><br><span class="line"><span class="meta">... </span>    print()</span><br><span class="line">...</span><br><span class="line"><span class="number">1</span> <span class="number">2</span> <span class="number">3</span></span><br></pre></td></tr></table></figure><p>等价地，可以创建一个集合a的迭代器：</p><figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="meta">&gt;&gt;&gt; </span>a = &#123;<span class="number">1</span>, <span class="number">2</span>, <span class="number">3</span>&#125;</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>it = iter(a)</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span><span class="keyword">while</span> <span class="literal">True</span>:</span><br><span class="line"><span class="meta">... </span>    <span class="keyword">try</span>:</span><br><span class="line"><span class="meta">... </span>        print(next(it), end=<span class="string">' '</span>)</span><br><span class="line"><span class="meta">... </span>    <span class="keyword">except</span> StopIteration:   <span class="comment"># 访问结束后再次调用next(it)会抛出此异常</span></span><br><span class="line"><span class="meta">... </span>        print()</span><br><span class="line"><span class="meta">... </span>        <span class="keyword">break</span></span><br><span class="line">...</span><br><span class="line"><span class="number">1</span> <span class="number">2</span> <span class="number">3</span></span><br></pre></td></tr></table></figure><a id="more"></a><p>例如，有一个链表，我希望像遍历数组一样可以遍历链表。</p><figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">Node</span>:</span></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">__init__</span><span class="params">(self, key)</span>:</span></span><br><span class="line">        self.key, self.next = key, <span class="literal">None</span></span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">__iter__</span><span class="params">(self)</span>:</span></span><br><span class="line">        self.y = self  <span class="comment"># 用变量y记录位置</span></span><br><span class="line">        <span class="keyword">return</span> self</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">__next__</span><span class="params">(self)</span>:</span></span><br><span class="line">        <span class="keyword">if</span> self.y <span class="keyword">is</span> <span class="literal">None</span>:  <span class="comment"># 队尾判断</span></span><br><span class="line">            <span class="keyword">raise</span> StopIteration</span><br><span class="line">        <span class="keyword">else</span>:</span><br><span class="line">            x = self.y  <span class="comment"># 暂存</span></span><br><span class="line">            <span class="keyword">if</span> self.y <span class="keyword">is</span> <span class="keyword">not</span> <span class="literal">None</span>:  <span class="comment"># 更新位置以便下次访问</span></span><br><span class="line">                self.y = self.y.next</span><br><span class="line">            <span class="keyword">return</span> x</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">__str__</span><span class="params">(self)</span>:</span></span><br><span class="line">        <span class="keyword">return</span> str(self.key)</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> __name__ == <span class="string">'__main__'</span>:</span><br><span class="line">    a, b, c = Node(<span class="number">1</span>), Node(<span class="number">2</span>), Node(<span class="number">3</span>)</span><br><span class="line">    a.next, b.next, c.next = b, c, <span class="literal">None</span></span><br><span class="line">    <span class="keyword">for</span> i <span class="keyword">in</span> a:             <span class="comment"># for each</span></span><br><span class="line">        print(i, end=<span class="string">' '</span>)</span><br><span class="line">    print()</span><br><span class="line"></span><br><span class="line">    it = iter(b)            <span class="comment"># iterator</span></span><br><span class="line">    print(next(it))</span><br></pre></td></tr></table></figure><p>结果：</p><figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">1 2 3</span><br><span class="line">2</span><br></pre></td></tr></table></figure><h1 id="生成器">生成器</h1><p>在Python中，使用了yield的函数被称为生成器。生成器是一个返回迭代器的函数，只能用于迭代操作，更简单点理解生成器就是一个迭代器。</p><p>python可以通过列表解析（list comprehension）的方式构建集合：</p><figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="meta">&gt;&gt;&gt; </span>[i <span class="keyword">for</span> i <span class="keyword">in</span> range(<span class="number">10</span>)]</span><br><span class="line">[<span class="number">0</span>, <span class="number">1</span>, <span class="number">2</span>, <span class="number">3</span>, <span class="number">4</span>, <span class="number">5</span>, <span class="number">6</span>, <span class="number">7</span>, <span class="number">8</span>, <span class="number">9</span>]</span><br></pre></td></tr></table></figure><p>实际上，<code>(i for i in range(10))</code>就是一个生成器。</p><figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="meta">&gt;&gt;&gt; </span>type(i <span class="keyword">for</span> i <span class="keyword">in</span> range(<span class="number">3</span>))</span><br><span class="line">&lt;<span class="class"><span class="keyword">class</span> '<span class="title">generator</span>'&gt;</span></span><br></pre></td></tr></table></figure><p>在生成器运行过程中，每次遇到yield时函数会暂停并保存当前所有的运行信息，返回yield的值，并在下一次执行next()方法时从当前位置继续运行。</p><p>这在很多情况下特别有用。例如，最近研究如何获得一个图中两点之间的所有简单路径。一个测试示例中大概包含一千万条不同的简单路径，若是一次性将这一千万条作为数组返回，……，大概我的笔记本会原地爆炸吧。</p><p>这时生成器就排上用场了。为了简化说明，使用斐波那契数列作为示例。一个斐波那契数列的迭代版本：</p><figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">fibonacci</span><span class="params">(n)</span>:</span></span><br><span class="line">    <span class="string">"""返回斐波那契数列的前n个元素组成的列表"""</span></span><br><span class="line">    a, b, c, r = <span class="number">0</span>, <span class="number">1</span>, <span class="number">0</span>, []</span><br><span class="line">    <span class="keyword">while</span> c &lt; n:</span><br><span class="line">        r.append(a)</span><br><span class="line">        a, b, c = b, a + b, c + <span class="number">1</span></span><br><span class="line">    <span class="keyword">return</span> r</span><br></pre></td></tr></table></figure><p>假设需要获得前一千万个数，……，(#`O′)。下面使用yield将之变为生成器。</p><figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">fibonacci_it</span><span class="params">(n)</span>:</span> <span class="comment"># 它是一个迭代器</span></span><br><span class="line">    a, b, c = <span class="number">0</span>, <span class="number">1</span>, <span class="number">0</span></span><br><span class="line">    <span class="keyword">while</span> c &lt; n:</span><br><span class="line">        <span class="keyword">yield</span> a  <span class="comment"># 每次执行到此处暂停，返回一个结果，下次调用next时将从此处继续执行</span></span><br><span class="line">        a, b, c = b, a + b, c + <span class="number">1</span></span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> __name__ == <span class="string">'__main__'</span>:</span><br><span class="line">    <span class="keyword">for</span> i <span class="keyword">in</span> fibonacci_it(<span class="number">10</span>):    <span class="comment"># 使用</span></span><br><span class="line">        print(i, end=<span class="string">' '</span>)</span><br><span class="line">    print()</span><br></pre></td></tr></table></figure><p>结果：</p><figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">0 1 1 2 3 5 8 13 21 34</span><br></pre></td></tr></table></figure>]]></content>
       
@@ -4821,9 +4858,9 @@
       
         <tags>
             
-            <tag> python </tag>
+            <tag> 递归 </tag>
             
-            <tag> recursion </tag>
+            <tag> Python </tag>
             
             <tag> iterator </tag>
             
@@ -4850,9 +4887,9 @@
       
         <tags>
             
-            <tag> python </tag>
-            
             <tag> networkx </tag>
+            
+            <tag> python </tag>
             
         </tags>
       
@@ -4877,13 +4914,13 @@
       
         <tags>
             
-            <tag> Introduction to Algorithms </tag>
-            
-            <tag> recursion </tag>
+            <tag> 递归 </tag>
             
             <tag> algorithms </tag>
             
             <tag> stack </tag>
+            
+            <tag> 算法导论 </tag>
             
             <tag> queue </tag>
             
@@ -4910,13 +4947,9 @@
       
         <tags>
             
-            <tag> graph </tag>
+            <tag> 算法导论 </tag>
             
-            <tag> Introduction to Algorithms </tag>
-            
-            <tag> adjacent list </tag>
-            
-            <tag> adjacent matrix </tag>
+            <tag> 图 </tag>
             
         </tags>
       
@@ -4968,13 +5001,13 @@
       
         <tags>
             
-            <tag> dynamic programming </tag>
-            
-            <tag> Introduction to Algorithms </tag>
+            <tag> 动态规划 </tag>
             
             <tag> algorithms </tag>
             
-            <tag> divide and conquer </tag>
+            <tag> 算法导论 </tag>
+            
+            <tag> 分治法 </tag>
             
         </tags>
       
@@ -4999,11 +5032,11 @@
       
         <tags>
             
-            <tag> Introduction to Algorithms </tag>
-            
             <tag> algorithms </tag>
             
-            <tag> divide and conquer </tag>
+            <tag> 算法导论 </tag>
+            
+            <tag> 分治法 </tag>
             
             <tag> quicksort </tag>
             
@@ -5030,11 +5063,11 @@
       
         <tags>
             
-            <tag> Introduction to Algorithms </tag>
-            
             <tag> algorithms </tag>
             
             <tag> network </tag>
+            
+            <tag> 算法导论 </tag>
             
         </tags>
       
@@ -5059,11 +5092,11 @@
       
         <tags>
             
-            <tag> linear programming </tag>
-            
             <tag> cplex </tag>
             
-            <tag> python </tag>
+            <tag> Python </tag>
+            
+            <tag> linear programming </tag>
             
         </tags>
       
@@ -5088,9 +5121,9 @@
       
         <tags>
             
-            <tag> Introduction to Algorithms </tag>
-            
             <tag> algorithms </tag>
+            
+            <tag> 算法导论 </tag>
             
             <tag> fibonacci heap </tag>
             
@@ -5121,11 +5154,11 @@
       
         <tags>
             
-            <tag> Introduction to Algorithms </tag>
+            <tag> 算法导论 </tag>
             
             <tag> data structures </tag>
             
-            <tag> binary tree </tag>
+            <tag> 二叉树 </tag>
             
         </tags>
       
@@ -5150,13 +5183,11 @@
       
         <tags>
             
-            <tag> Introduction to Algorithms </tag>
+            <tag> 算法导论 </tag>
             
             <tag> data structures </tag>
             
-            <tag> binary tree </tag>
-            
-            <tag> tree </tag>
+            <tag> 二叉树 </tag>
             
         </tags>
       
@@ -5181,7 +5212,7 @@
       
         <tags>
             
-            <tag> Introduction to Algorithms </tag>
+            <tag> 算法导论 </tag>
             
             <tag> data structures </tag>
             
@@ -5237,7 +5268,7 @@
       
         <tags>
             
-            <tag> Introduction to Algorithms </tag>
+            <tag> 算法导论 </tag>
             
             <tag> data structures </tag>
             
@@ -5253,8 +5284,8 @@
     
     <entry>
       <title>斯特灵近似公式</title>
-      <link href="/further-mathematics/stirling-s-approximation/"/>
-      <url>/further-mathematics/stirling-s-approximation/</url>
+      <link href="/further-mathematics/stirlings-approximation/"/>
+      <url>/further-mathematics/stirlings-approximation/</url>
       
         <content type="html"><![CDATA[<p><a href="https://zh.wikipedia.org/wiki/%E6%96%AF%E7%89%B9%E9%9D%88%E5%85%AC%E5%BC%8F" target="_blank" rel="noopener">斯特灵公式</a>（Stirling's approximation or Stirling's formula）是一条用来取n阶乘近似值的数学公式。一般来说，当n很大的时候，n阶乘的计算量十分大，所以斯特灵公式十分好用。而且，即使在n很小的时候，斯特灵公式的取值已经十分准确。</p><p><span class="math display">\[n! \approx \sqrt{2\pi{n}}(\frac{n}{e})^n\]</span></p>]]></content>
       
@@ -5293,15 +5324,15 @@
       
         <tags>
             
+            <tag> algorithms </tag>
+            
             <tag> sort </tag>
             
-            <tag> Introduction to Algorithms </tag>
-            
-            <tag> algorithms </tag>
+            <tag> 算法导论 </tag>
             
             <tag> comparison sort </tag>
             
-            <tag> divide and conquer </tag>
+            <tag> 分治法 </tag>
             
         </tags>
       
@@ -5326,15 +5357,15 @@
       
         <tags>
             
+            <tag> algorithms </tag>
+            
             <tag> sort </tag>
             
-            <tag> Introduction to Algorithms </tag>
-            
-            <tag> algorithms </tag>
+            <tag> 算法导论 </tag>
             
             <tag> comparison sort </tag>
             
-            <tag> divide and conquer </tag>
+            <tag> 分治法 </tag>
             
         </tags>
       
@@ -5343,9 +5374,9 @@
     
     
     <entry>
-      <title>Python 列表推导</title>
-      <link href="/programming/python-list-comprehensions/"/>
-      <url>/programming/python-list-comprehensions/</url>
+      <title>列表推导</title>
+      <link href="/programming/list-comprehensions/"/>
+      <url>/programming/list-comprehensions/</url>
       
         <content type="html"><![CDATA[<h1 id="列表推导">列表推导</h1><p>列表推导（List comprehensions）提供了一种更简洁的方式来创建集合。例如创建一个平方和的列表：</p><figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="meta">&gt;&gt;&gt; </span>squares = []</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span><span class="keyword">for</span> x <span class="keyword">in</span> range(<span class="number">10</span>):</span><br><span class="line"><span class="meta">... </span>    squares.append(x**<span class="number">2</span>)</span><br><span class="line">...</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>squares</span><br><span class="line">[<span class="number">0</span>, <span class="number">1</span>, <span class="number">4</span>, <span class="number">9</span>, <span class="number">16</span>, <span class="number">25</span>, <span class="number">36</span>, <span class="number">49</span>, <span class="number">64</span>, <span class="number">81</span>]</span><br><span class="line"><span class="comment"># 在循环结束后，x 仍然存在。</span></span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>x</span><br><span class="line"><span class="number">9</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># 利用匿名方法摆脱这种副作用。</span></span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>squares = list(map(<span class="keyword">lambda</span> y: y**<span class="number">2</span>, range(<span class="number">10</span>)))</span><br><span class="line"></span><br><span class="line"><span class="comment"># 使用列表推导，代码更加简洁，可读性也更好。</span></span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>squares = [z**<span class="number">2</span> <span class="keyword">for</span> z <span class="keyword">in</span> range(<span class="number">10</span>)]</span><br></pre></td></tr></table></figure><h1 id="扩展">扩展</h1><p>一个列表推导语句至少要有一对内含 <code>for</code> 语句的括号（例如 <code>[x for x in range(9)]</code>），<code>for</code> 语句后面可以跟其他 <code>for</code> 或 <code>if</code> 语句。</p><figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="meta">&gt;&gt;&gt; </span>[(x, y) <span class="keyword">for</span> x <span class="keyword">in</span> [<span class="number">1</span>, <span class="number">2</span>, <span class="number">3</span>] <span class="keyword">for</span> y <span class="keyword">in</span> [<span class="number">4</span>, <span class="number">5</span>, <span class="number">6</span>] <span class="keyword">if</span> x != y]</span><br><span class="line">[(<span class="number">1</span>, <span class="number">4</span>), (<span class="number">1</span>, <span class="number">5</span>), (<span class="number">1</span>, <span class="number">6</span>), (<span class="number">2</span>, <span class="number">4</span>), (<span class="number">2</span>, <span class="number">5</span>), (<span class="number">2</span>, <span class="number">6</span>), (<span class="number">3</span>, <span class="number">4</span>), (<span class="number">3</span>, <span class="number">5</span>), (<span class="number">3</span>, <span class="number">6</span>)]</span><br><span class="line"></span><br><span class="line"><span class="comment"># 将 for 和 if 语句按序拆开，上述语句等价于</span></span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>combs = []</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span><span class="keyword">for</span> x <span class="keyword">in</span> [<span class="number">1</span>, <span class="number">2</span>, <span class="number">3</span>]:</span><br><span class="line"><span class="meta">... </span>    <span class="keyword">for</span> y <span class="keyword">in</span> [<span class="number">4</span>, <span class="number">5</span>, <span class="number">6</span>]:</span><br><span class="line"><span class="meta">... </span>            <span class="keyword">if</span> x != y:</span><br><span class="line"><span class="meta">... </span>                    combs.append((x, y))</span><br><span class="line">...</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>combs</span><br><span class="line">[(<span class="number">1</span>, <span class="number">4</span>), (<span class="number">1</span>, <span class="number">5</span>), (<span class="number">1</span>, <span class="number">6</span>), (<span class="number">2</span>, <span class="number">4</span>), (<span class="number">2</span>, <span class="number">5</span>), (<span class="number">2</span>, <span class="number">6</span>), (<span class="number">3</span>, <span class="number">4</span>), (<span class="number">3</span>, <span class="number">5</span>), (<span class="number">3</span>, <span class="number">6</span>)]</span><br></pre></td></tr></table></figure><h1 id="嵌套">嵌套</h1><p>列表推导自身可以嵌套使用，用来创建一个多维列表。下面是求转置矩阵的例子。</p><a id="more"></a><figure class="highlight python"><table><tr><td class="code"><pre><span class="line">matrix = [</span><br><span class="line">    [<span class="number">1</span>,<span class="number">2</span>,<span class="number">3</span>,<span class="number">4</span>],</span><br><span class="line">    [<span class="number">5</span>,<span class="number">6</span>,<span class="number">7</span>,<span class="number">8</span>],</span><br><span class="line">    [<span class="number">9</span>,<span class="number">10</span>,<span class="number">11</span>,<span class="number">12</span>],</span><br><span class="line">]</span><br><span class="line"></span><br><span class="line"><span class="comment"># 方法1：两个comprehensions嵌套</span></span><br><span class="line">transposed = [[row[i] <span class="keyword">for</span> row <span class="keyword">in</span> matrix] <span class="keyword">for</span> i <span class="keyword">in</span> range(<span class="number">4</span>)]</span><br><span class="line"></span><br><span class="line"><span class="comment"># 方法2：一个comprehension</span></span><br><span class="line">transposed = []</span><br><span class="line"><span class="keyword">for</span> i <span class="keyword">in</span> range(<span class="number">4</span>):</span><br><span class="line">    transposed.append([row[i] <span class="keyword">for</span> row <span class="keyword">in</span> matrix])</span><br><span class="line"></span><br><span class="line"><span class="comment"># 方法3：原生</span></span><br><span class="line">transposed = []</span><br><span class="line"><span class="keyword">for</span> i <span class="keyword">in</span> range(<span class="number">4</span>):</span><br><span class="line">    transposed_row = []</span><br><span class="line">    <span class="keyword">for</span> row <span class="keyword">in</span> matrix:</span><br><span class="line">        transposed_row.append(row[i])</span><br><span class="line">    transposed.append(transposed_row)</span><br><span class="line"></span><br><span class="line"><span class="comment"># 实际使用时，更倾向于内建方法。如 zip() 方法</span></span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>list(zip(*matrix))</span><br><span class="line">[(<span class="number">1</span>, <span class="number">5</span>, <span class="number">9</span>), (<span class="number">2</span>, <span class="number">6</span>, <span class="number">10</span>), (<span class="number">3</span>, <span class="number">7</span>, <span class="number">11</span>), (<span class="number">4</span>, <span class="number">8</span>, <span class="number">12</span>)]</span><br></pre></td></tr></table></figure><h1 id="创建集合和字典">创建集合和字典</h1><p>类似的操作同样适用于创建集合和字典。可以称之为集合推导（Set comprehensions）和字典推导（Dictionary comprehensions）。</p><figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="meta">&gt;&gt;&gt; </span>&#123;s <span class="keyword">for</span> s <span class="keyword">in</span> <span class="string">'hello world'</span>&#125;</span><br><span class="line">&#123;<span class="string">'w'</span>, <span class="string">'o'</span>, <span class="string">'r'</span>, <span class="string">'h'</span>, <span class="string">'l'</span>, <span class="string">' '</span>, <span class="string">'d'</span>, <span class="string">'e'</span>&#125;</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>&#123;k:v <span class="keyword">for</span> k, v <span class="keyword">in</span> enumerate([<span class="string">'zero'</span>, <span class="string">'first'</span>, <span class="string">'second'</span>])&#125;</span><br><span class="line">&#123;<span class="number">0</span>: <span class="string">'zero'</span>, <span class="number">1</span>: <span class="string">'first'</span>, <span class="number">2</span>: <span class="string">'second'</span>&#125;</span><br></pre></td></tr></table></figure>]]></content>
       
@@ -5359,9 +5390,7 @@
       
         <tags>
             
-            <tag> python </tag>
-            
-            <tag> zip </tag>
+            <tag> Python </tag>
             
         </tags>
       
@@ -5370,9 +5399,9 @@
     
     
     <entry>
-      <title>Python 循环技巧</title>
-      <link href="/programming/python-looping-techniques/"/>
-      <url>/programming/python-looping-techniques/</url>
+      <title>循环技巧</title>
+      <link href="/programming/looping-techniques/"/>
+      <url>/programming/looping-techniques/</url>
       
         <content type="html"><![CDATA[<h1 id="同时遍历-key-和-value">同时遍历 key 和 value</h1><p>使用 <code>items()</code> 方法。</p><figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="meta">&gt;&gt;&gt; </span>dic = &#123;<span class="string">'name'</span>: <span class="string">'chen'</span>, <span class="string">'gender'</span>: <span class="string">'male'</span>&#125;</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span><span class="keyword">for</span> k, v <span class="keyword">in</span> dic.items():</span><br><span class="line"><span class="meta">... </span>    print(k, v)</span><br><span class="line">...</span><br><span class="line">name chen  </span><br><span class="line">gender male</span><br></pre></td></tr></table></figure><h1 id="同时遍历-index-和-value">同时遍历 index 和 value</h1><p>使用 <code>enumerate()</code> 方法。</p><figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="meta">&gt;&gt;&gt; </span><span class="keyword">for</span> i, v <span class="keyword">in</span> enumerate([<span class="string">'zero'</span>, <span class="string">'one'</span>, <span class="string">'two'</span>, <span class="string">'three'</span>]):</span><br><span class="line"><span class="meta">... </span>    print(i, v)</span><br><span class="line">...</span><br><span class="line"><span class="number">0</span> zero</span><br><span class="line"><span class="number">1</span> one</span><br><span class="line"><span class="number">2</span> two</span><br><span class="line"><span class="number">3</span> three</span><br></pre></td></tr></table></figure><a id="more"></a><h1 id="同时遍历多个数组">同时遍历多个数组</h1><p>使用 <code>zip()</code> 方法。</p><figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="meta">&gt;&gt;&gt; </span>eng = [<span class="string">'zero'</span>, <span class="string">'one'</span>, <span class="string">'two'</span>]</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span><span class="keyword">for</span> n, e <span class="keyword">in</span> zip(nums, eng):</span><br><span class="line"><span class="meta">... </span>    print(n, e)</span><br><span class="line">...</span><br><span class="line"><span class="number">0</span> zero</span><br><span class="line"><span class="number">1</span> one</span><br><span class="line"><span class="number">2</span> two</span><br></pre></td></tr></table></figure><h1 id="反序遍历">反序遍历</h1><p>使用 <code>reversed()</code> 方法。</p><figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="meta">&gt;&gt;&gt; </span><span class="keyword">for</span> i <span class="keyword">in</span> reversed(range(<span class="number">2</span>, <span class="number">11</span>, <span class="number">2</span>)):</span><br><span class="line"><span class="meta">... </span>    print(i, end=<span class="string">' '</span>)</span><br><span class="line">...</span><br><span class="line"><span class="number">10</span> <span class="number">8</span> <span class="number">6</span> <span class="number">4</span> <span class="number">2</span> &gt;&gt;&gt;</span><br></pre></td></tr></table></figure><h1 id="排序和去重">排序和去重</h1><p>使用 <code>sorted()</code> 和 <code>set()</code> 方法。</p><figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="meta">&gt;&gt;&gt; </span>basket = [<span class="string">'apple'</span>, <span class="string">'orange'</span>, <span class="string">'apple'</span>, <span class="string">'banana'</span>]</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span><span class="keyword">for</span> f <span class="keyword">in</span> sorted(set(basket)):</span><br><span class="line"><span class="meta">... </span>    print(f)</span><br><span class="line">...</span><br><span class="line">apple</span><br><span class="line">banana</span><br><span class="line">orange</span><br></pre></td></tr></table></figure><h1 id="循环里面的-else">循环里面的 else</h1><p>退出循环时执行 <code>else</code> 块中代码。</p><figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="meta">&gt;&gt;&gt; </span><span class="keyword">for</span> n <span class="keyword">in</span> range(<span class="number">2</span>, <span class="number">10</span>):</span><br><span class="line"><span class="meta">... </span>    <span class="keyword">for</span> x <span class="keyword">in</span> range(<span class="number">2</span>, n):</span><br><span class="line"><span class="meta">... </span>            <span class="keyword">if</span> n % x == <span class="number">0</span>:</span><br><span class="line"><span class="meta">... </span>                    print(n, <span class="string">'equals'</span>, x, <span class="string">'*'</span>, n//x)</span><br><span class="line"><span class="meta">... </span>                    <span class="keyword">break</span></span><br><span class="line"><span class="meta">... </span>    <span class="keyword">else</span>:</span><br><span class="line"><span class="meta">... </span>            print(n, <span class="string">'is a prime number'</span>)</span><br><span class="line">...</span><br><span class="line"><span class="number">2</span> <span class="keyword">is</span> a prime number</span><br><span class="line"><span class="number">3</span> <span class="keyword">is</span> a prime number</span><br><span class="line"><span class="number">4</span> equals <span class="number">2</span> * <span class="number">2</span></span><br><span class="line"><span class="number">5</span> <span class="keyword">is</span> a prime number</span><br><span class="line"><span class="number">6</span> equals <span class="number">2</span> * <span class="number">3</span></span><br><span class="line"><span class="number">7</span> <span class="keyword">is</span> a prime number</span><br><span class="line"><span class="number">8</span> equals <span class="number">2</span> * <span class="number">4</span></span><br><span class="line"><span class="number">9</span> equals <span class="number">3</span> * <span class="number">3</span></span><br></pre></td></tr></table></figure>]]></content>
       
@@ -5386,7 +5415,7 @@
       
         <tags>
             
-            <tag> python </tag>
+            <tag> Python </tag>
             
         </tags>
       
@@ -5411,11 +5440,11 @@
       
         <tags>
             
+            <tag> algorithms </tag>
+            
             <tag> sort </tag>
             
-            <tag> Introduction to Algorithms </tag>
-            
-            <tag> algorithms </tag>
+            <tag> 算法导论 </tag>
             
             <tag> non-comparison sort </tag>
             
@@ -5442,11 +5471,11 @@
       
         <tags>
             
+            <tag> algorithms </tag>
+            
             <tag> sort </tag>
             
-            <tag> Introduction to Algorithms </tag>
-            
-            <tag> algorithms </tag>
+            <tag> 算法导论 </tag>
             
             <tag> comparison sort </tag>
             
@@ -5475,11 +5504,11 @@
             
             <tag> sort </tag>
             
-            <tag> Introduction to Algorithms </tag>
+            <tag> 算法导论 </tag>
             
             <tag> data structures </tag>
             
-            <tag> binary tree </tag>
+            <tag> 二叉树 </tag>
             
             <tag> heap </tag>
             
