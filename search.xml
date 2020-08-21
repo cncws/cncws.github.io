@@ -4,11 +4,100 @@
   
     
     <entry>
+      <title>压缩算法</title>
+      <link href="/programming/nowcoder/compression/"/>
+      <url>/programming/nowcoder/compression/</url>
+      
+        <content type="html"><![CDATA[<p><a href="https://www.nowcoder.com/practice/c27561e5b7e0441493adb9a54071888d" target="_blank" rel="noopener">压缩算法</a></p><p>小 Q 想要给他的朋友发送一个神秘字符串，但是他发现字符串的过于长了，于是小 Q 发明了一种压缩算法对字符串中重复的部分进行了压缩，对于字符串中连续的 <code>m</code> 个相同字符串 <code>S</code> 将会压缩为 <code>[m|S]</code>( <code>m</code> 为一个整数且 <code>1 &lt;= m &lt;= 100</code>)，例如字符串 <code>ABCABCABC</code> 将会被压缩为 <code>[3|ABC]</code>，现在小 Q 的同学收到了小 Q 发送过来的字符串，你能帮助他进行解压缩么？</p><p><strong>输入描述:</strong></p><blockquote><p>输入第一行包含一个字符串 <code>S</code>，代表压缩后的字符串。</p><p><code>S.length &lt;= 1000</code>;</p><p><code>S</code> 仅包含大写字母、<code>[</code>、<code>]</code>、<code>|</code>;</p><p>解压后的字符串长度不超过 100000; 压缩递归层数不超过 10 层;</p></blockquote><p><strong>输出描述:</strong></p><blockquote><p>输出一个字符串，代表解压后的字符串。</p></blockquote><p><strong>示例 1</strong></p><figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">输入</span><br><span class="line">HG[3|B[2|CA]]F</span><br><span class="line"></span><br><span class="line">输出</span><br><span class="line">HGBCACABCACABCACAF</span><br><span class="line"></span><br><span class="line">说明</span><br><span class="line">HG[3|B[2|CA]]F−&gt;HG[3|BCACA]F−&gt;HGBCACABCACABCACAF</span><br></pre></td></tr></table></figure><a id="more"></a><h1 id="递归">递归</h1><figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">recursive</span><span class="params">(s)</span>:</span></span><br><span class="line">    l = m = r = <span class="number">-1</span></span><br><span class="line">    <span class="keyword">for</span> i, c <span class="keyword">in</span> enumerate(s):</span><br><span class="line">        <span class="keyword">if</span> c == <span class="string">'['</span>:</span><br><span class="line">            l = i</span><br><span class="line">        <span class="keyword">elif</span> c == <span class="string">'|'</span>:</span><br><span class="line">            m = i</span><br><span class="line">        <span class="keyword">elif</span> c == <span class="string">']'</span>:</span><br><span class="line">            r = i</span><br><span class="line">            <span class="keyword">break</span>  <span class="comment"># 找到一个压缩的字符串，必须提前退出</span></span><br><span class="line">    <span class="keyword">if</span> l != <span class="number">-1</span> <span class="keyword">and</span> m != <span class="number">-1</span> <span class="keyword">and</span> r != <span class="number">-1</span>:</span><br><span class="line">        num = int(s[l+<span class="number">1</span>:m])</span><br><span class="line">        pat = s[m+<span class="number">1</span>:r]</span><br><span class="line">        new = s[:l] + pat * num + s[r+<span class="number">1</span>:]</span><br><span class="line">        <span class="keyword">return</span> recursive(new)</span><br><span class="line">    <span class="keyword">return</span> s</span><br><span class="line"></span><br><span class="line">s = input()</span><br><span class="line">print(recursive(s))</span><br></pre></td></tr></table></figure>]]></content>
+      
+      
+      <categories>
+          
+          <category> 编程 </category>
+          
+      </categories>
+      
+      
+        <tags>
+            
+            <tag> 递归 </tag>
+            
+            <tag> 牛客 </tag>
+            
+            <tag> 腾讯 </tag>
+            
+            <tag> 字符串 </tag>
+            
+        </tags>
+      
+    </entry>
+    
+    
+    
+    <entry>
+      <title>逛街</title>
+      <link href="/programming/nowcoder/go-shopping/"/>
+      <url>/programming/nowcoder/go-shopping/</url>
+      
+        <content type="html"><![CDATA[<p><a href="https://www.nowcoder.com/practice/35fac8d69f314e958a150c141894ef6a" target="_blank" rel="noopener">逛街</a></p><p>小 Q 在周末的时候和他的小伙伴来到大城市逛街，一条步行街上有很多高楼，共有 <code>n</code> 座高楼排成一行。</p><p>小 Q 从第一栋一直走到了最后一栋，小 Q 从来都没有见到这么多的楼，所以他想知道他在每栋楼的位置处能看到多少栋楼呢？（当前面的楼的高度大于等于后面的楼时，后面的楼将被挡住）</p><p><strong>输入描述:</strong></p><blockquote><p>输入第一行将包含一个数字 <code>n</code>，代表楼的栋数，接下来的一行将包含 <code>n</code> 个数字 <code>wi (1 &lt;= i &lt;= n)</code>，代表每一栋楼的高度。</p><p><code>1 &lt;= n &lt;= 100000;</code></p><p><code>1 &lt;= wi &lt;= 100000;</code></p></blockquote><p><strong>输出描述:</strong></p><blockquote><p>输出一行，包含空格分割的 <code>n</code> 个数字 <code>vi</code>，分别代表小 Q 在第 <code>i</code> 栋楼时能看到的楼的数量。</p></blockquote><p><strong>示例 1</strong></p><figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">输入</span><br><span class="line">6</span><br><span class="line">5 3 8 3 2 5</span><br><span class="line"></span><br><span class="line">输出</span><br><span class="line">3 3 5 4 4 4</span><br><span class="line"></span><br><span class="line">说明</span><br><span class="line">当小Q处于位置3时，他可以向前看到位置2,1处的楼，向后看到位置4,6处的楼，加上第3栋楼，共可看到5栋楼。</span><br><span class="line">当小Q处于位置4时，他可以向前看到位置3处的楼，向后看到位置5,6处的楼，加上第4栋楼，共可看到4栋楼。</span><br></pre></td></tr></table></figure><h1 id="单调栈">单调栈</h1><p><code>站在 i 处能看到的楼的数量 = 向左看能看到的楼的数量 + 向右看能看到的楼的数量 + 1</code></p><a id="more"></a><p>高层楼会遮挡住后面的低层楼，想象一下，我们从左走到右的时候，当遇到一栋更高的楼，之前的较低的楼将全部不可见。</p><p>使用单调栈可以模拟这种情况，栈中的数字代表楼的高度，只能单调递减。在一个较大的数字入栈前，需要将栈中所有小于该数字的元素全部弹出，再入栈。</p><p>栈中元素的数量，代表了能看到的楼的数量。分别 <em>从左向右/从右向左</em> 遍历一遍，就能知道在每个位置 <em>向左看/向右看</em> 能看到的楼的数量。</p><figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">solve</span><span class="params">(high)</span>:</span></span><br><span class="line">    n = len(high)</span><br><span class="line">    res = [<span class="number">0</span>] * n</span><br><span class="line">    <span class="comment"># 维护一个递减的单调栈</span></span><br><span class="line">    stack = []</span><br><span class="line">    left = [<span class="number">0</span>] * n</span><br><span class="line">    <span class="keyword">for</span> i, h <span class="keyword">in</span> enumerate(high):</span><br><span class="line">        left[i] = len(stack)  <span class="comment"># 在 i 向左看，能看到的楼数</span></span><br><span class="line">        <span class="keyword">while</span> stack <span class="keyword">and</span> h &gt;= stack[<span class="number">-1</span>]:</span><br><span class="line">            stack.pop()</span><br><span class="line">        stack.append(h)</span><br><span class="line">    <span class="comment"># 向右看</span></span><br><span class="line">    stack = []</span><br><span class="line">    right = [<span class="number">0</span>] * n</span><br><span class="line">    <span class="keyword">for</span> i <span class="keyword">in</span> reversed(range(n)):</span><br><span class="line">        h = high[i]</span><br><span class="line">        right[i] = len(stack)</span><br><span class="line">        res[i] = left[i] + right[i] + <span class="number">1</span></span><br><span class="line">        <span class="keyword">while</span> stack <span class="keyword">and</span> h &gt;= stack[<span class="number">-1</span>]:</span><br><span class="line">            stack.pop()</span><br><span class="line">        stack.append(h)</span><br><span class="line">    <span class="keyword">return</span> res</span><br><span class="line"></span><br><span class="line">n = int(input())</span><br><span class="line">high = list(map(int, input().split()))</span><br><span class="line">res = solve(high)</span><br><span class="line">print(<span class="string">' '</span>.join(map(str, res)))</span><br></pre></td></tr></table></figure>]]></content>
+      
+      
+      <categories>
+          
+          <category> 编程 </category>
+          
+      </categories>
+      
+      
+        <tags>
+            
+            <tag> 牛客 </tag>
+            
+            <tag> 腾讯 </tag>
+            
+            <tag> 单调栈 </tag>
+            
+        </tags>
+      
+    </entry>
+    
+    
+    
+    <entry>
+      <title>假期</title>
+      <link href="/programming/nowcoder/holiday/"/>
+      <url>/programming/nowcoder/holiday/</url>
+      
+        <content type="html"><![CDATA[<p><a href="https://www.nowcoder.com/practice/7cd9a140387e455a972e8fea0e74be2c" target="_blank" rel="noopener">假期</a></p><p>由于业绩优秀，公司给小 Q 放了 <code>n</code> 天的假，身为工作狂的小 Q 打算在在假期中工作、锻炼或者休息。他有个奇怪的习惯：不会连续两天工作或锻炼。只有当公司营业时，小 Q 才能去工作，只有当健身房营业时，小 Q 才能去健身，小 Q 一天只能干一件事。给出假期中公司，健身房的营业情况，求小 Q 最少需要休息几天。</p><p><strong>输入描述:</strong></p><blockquote><p>第一行一个整数 <code>n (1 &lt;= n &lt;= 100000)</code> 表示放假天数</p><p>第二行 <code>n</code> 个数 每个数为 <code>0</code> 或 <code>1</code>，第 <code>i</code> 个数表示公司在第 <code>i</code> 天是否营业</p><p>第三行 <code>n</code> 个数 每个数为 <code>0</code> 或 <code>1</code>，第 <code>i</code> 个数表示健身房在第 <code>i</code> 天是否营业</p><p>（1为营业 0为不营业）</p></blockquote><p><strong>输出描述:</strong></p><blockquote><p>一个整数，表示小 Q 休息的最少天数</p></blockquote><p><strong>示例 1</strong></p><figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">输入</span><br><span class="line">4</span><br><span class="line">1 1 0 0</span><br><span class="line">0 1 1 0</span><br><span class="line"></span><br><span class="line">输出</span><br><span class="line">2</span><br><span class="line"></span><br><span class="line">说明</span><br><span class="line">小 Q 可以在第一天工作，第二天或第三天健身，小 Q 最少休息 2 天</span><br></pre></td></tr></table></figure><a id="more"></a><h1 id="动态规划">动态规划</h1><figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">solve</span><span class="params">(com, gym)</span>:</span></span><br><span class="line">    <span class="comment"># dp[i][0] = 第 i 天休息...</span></span><br><span class="line">    <span class="comment"># dp[i][1] = 第 i 天工作...</span></span><br><span class="line">    <span class="comment"># dp[i][2] = 第 i 天健身...</span></span><br><span class="line">    n = len(com)</span><br><span class="line">    dp = [[n] * <span class="number">3</span> <span class="keyword">for</span> _ <span class="keyword">in</span> range(n)]</span><br><span class="line">    dp[<span class="number">0</span>][<span class="number">0</span>] = <span class="number">1</span></span><br><span class="line">    dp[<span class="number">0</span>][<span class="number">1</span>] = int(com[<span class="number">0</span>] == <span class="number">0</span>)</span><br><span class="line">    dp[<span class="number">0</span>][<span class="number">2</span>] = int(gym[<span class="number">0</span>] == <span class="number">0</span>)</span><br><span class="line">    <span class="keyword">for</span> i <span class="keyword">in</span> range(<span class="number">1</span>, n):  <span class="comment"># 第 i 天为止，最少的休息天数</span></span><br><span class="line">        <span class="keyword">if</span> com[i] == <span class="number">1</span>:  <span class="comment"># 上班</span></span><br><span class="line">            dp[i][<span class="number">1</span>] = min(dp[i - <span class="number">1</span>][<span class="number">0</span>], dp[i - <span class="number">1</span>][<span class="number">2</span>])</span><br><span class="line">        <span class="keyword">if</span> gym[i] == <span class="number">1</span>:  <span class="comment"># 健身</span></span><br><span class="line">            dp[i][<span class="number">2</span>] = min(dp[i - <span class="number">1</span>][<span class="number">0</span>], dp[i - <span class="number">1</span>][<span class="number">1</span>])</span><br><span class="line">        <span class="comment"># 休息</span></span><br><span class="line">        dp[i][<span class="number">0</span>] = min(dp[i - <span class="number">1</span>]) + <span class="number">1</span></span><br><span class="line"></span><br><span class="line">    <span class="keyword">return</span> min(dp[<span class="number">-1</span>])</span><br><span class="line"></span><br><span class="line">n = int(input())</span><br><span class="line">com = list(map(int, input().split()))</span><br><span class="line">gym = list(map(int, input().split()))</span><br><span class="line">print(solve(com, gym))</span><br></pre></td></tr></table></figure>]]></content>
+      
+      
+      <categories>
+          
+          <category> 编程 </category>
+          
+      </categories>
+      
+      
+        <tags>
+            
+            <tag> 动态规划 </tag>
+            
+            <tag> 牛客 </tag>
+            
+            <tag> 腾讯 </tag>
+            
+        </tags>
+      
+    </entry>
+    
+    
+    
+    <entry>
       <title>视野争夺</title>
       <link href="/programming/nowcoder/guard-the-guarden/"/>
       <url>/programming/nowcoder/guard-the-guarden/</url>
       
-        <content type="html"><![CDATA[<p><a href="https://www.nowcoder.com/practice/61e1e66e39f348cdb6495de91ac36a41" target="_blank" rel="noopener">视野争夺</a></p><p>小 Q 在进行一场竞技游戏，这场游戏的胜负关键就在于能否能争夺一条长度为 <code>L</code> 的河道，即可以看作是 <code>[0,L]</code> 的一条数轴。</p><p>这款竞技游戏当中有 <code>n</code> 个可以提供视野的道具−真视守卫，第 <code>i</code> 个真视守卫能够覆盖区间 <code>[xi,yi]</code>。现在小 Q 想知道至少用几个真视守卫就可以覆盖整段河道。</p><p><strong>输入描述:</strong></p><blockquote><p>输入包括 <code>n+1</code> 行。</p><p>第一行包括两个正整数 <code>n, L (1 &lt;= n &lt;= 10^5, 1 &lt;= L &lt;= 10^9)</code></p><p>接下来的 <code>n</code> 行，每行两个正整数 <code>xi, yi (0 &lt;= xi &lt;= yi &lt;= 10^9)</code>，表示第 <code>i</code> 个真视守卫覆盖的区间。</p></blockquote><p><strong>输出描述:</strong></p><blockquote><p>一个整数，表示最少需要的真视守卫数量, 如果无解, 输出 <code>-1</code>。</p></blockquote><p><strong>示例1</strong></p><figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">输入</span><br><span class="line">4 6</span><br><span class="line">3 6</span><br><span class="line">2 4</span><br><span class="line">0 2</span><br><span class="line">4 7</span><br><span class="line"></span><br><span class="line">输出</span><br><span class="line">3</span><br></pre></td></tr></table></figure><h1 id="排序-贪心算法">排序 + 贪心算法</h1><p>本质上是一道最小区间覆盖问题。可使用贪心算法求解。</p><a id="more"></a><p>试想，为了覆盖点 <code>0</code>，该如何选择守卫？守卫是等价的，在能覆盖 <code>0</code> 的前提下，肯定是选择右侧覆盖范围最大的守卫，设为 <code>x</code>。</p><p>继续，为了覆盖点 <code>x</code>，该如何选择守卫……</p><figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="comment"># Time: O(n log(n)), n = len(guard)</span></span><br><span class="line"><span class="comment"># Space: O(1)</span></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">solve</span><span class="params">(L, guard)</span>:</span></span><br><span class="line">    <span class="comment"># 为了快速找出能覆盖 x 的所有守卫，将守卫按照覆盖区间排序</span></span><br><span class="line">    guard.sort(key=<span class="keyword">lambda</span> x: x[<span class="number">0</span>])</span><br><span class="line">    start, end, res = <span class="number">0</span>, <span class="number">0</span>, <span class="number">0</span></span><br><span class="line">    i, n = <span class="number">0</span>, len(guard)</span><br><span class="line">    <span class="keyword">while</span> i &lt; n:</span><br><span class="line">        <span class="keyword">if</span> guard[i][<span class="number">1</span>] &lt;= end:  <span class="comment"># 跳过覆盖范围不够远的守卫</span></span><br><span class="line">            i += <span class="number">1</span></span><br><span class="line">            <span class="keyword">continue</span></span><br><span class="line">        <span class="keyword">while</span> i &lt; n <span class="keyword">and</span> guard[i][<span class="number">0</span>] &lt;= start:  <span class="comment"># 可以覆盖 start 的守卫</span></span><br><span class="line">            end = max(end, guard[i][<span class="number">1</span>])</span><br><span class="line">            i += <span class="number">1</span></span><br><span class="line">        <span class="keyword">if</span> i &lt; n <span class="keyword">and</span> guard[i][<span class="number">0</span>] &gt; end:  <span class="comment"># 无解</span></span><br><span class="line">            <span class="keyword">return</span> <span class="number">-1</span></span><br><span class="line">        <span class="keyword">else</span>:  <span class="comment"># 放置一个守卫，守卫能覆盖的最远距离为 end</span></span><br><span class="line">            res += <span class="number">1</span></span><br><span class="line">            start = end</span><br><span class="line">        <span class="keyword">if</span> end &gt;= L:</span><br><span class="line">            <span class="keyword">return</span> res</span><br><span class="line"></span><br><span class="line">    <span class="keyword">return</span> <span class="number">-1</span></span><br><span class="line"></span><br><span class="line"></span><br><span class="line">n, L = map(int, input().split())</span><br><span class="line">guard = []</span><br><span class="line"><span class="keyword">for</span> _ <span class="keyword">in</span> range(n):</span><br><span class="line">    guard.append(list(map(int, input().split())))</span><br><span class="line">print(solve(L, guard))</span><br></pre></td></tr></table></figure>]]></content>
+        <content type="html"><![CDATA[<p><a href="https://www.nowcoder.com/practice/61e1e66e39f348cdb6495de91ac36a41" target="_blank" rel="noopener">视野争夺</a></p><p>小 Q 在进行一场竞技游戏，这场游戏的胜负关键就在于能否能争夺一条长度为 <code>L</code> 的河道，即可以看作是 <code>[0,L]</code> 的一条数轴。</p><p>这款竞技游戏当中有 <code>n</code> 个可以提供视野的道具−真视守卫，第 <code>i</code> 个真视守卫能够覆盖区间 <code>[xi,yi]</code>。现在小 Q 想知道至少用几个真视守卫就可以覆盖整段河道。</p><p><strong>输入描述:</strong></p><blockquote><p>输入包括 <code>n+1</code> 行。</p><p>第一行包括两个正整数 <code>n, L (1 &lt;= n &lt;= 10^5, 1 &lt;= L &lt;= 10^9)</code></p><p>接下来的 <code>n</code> 行，每行两个正整数 <code>xi, yi (0 &lt;= xi &lt;= yi &lt;= 10^9)</code>，表示第 <code>i</code> 个真视守卫覆盖的区间。</p></blockquote><p><strong>输出描述:</strong></p><blockquote><p>一个整数，表示最少需要的真视守卫数量, 如果无解, 输出 <code>-1</code>。</p></blockquote><p><strong>示例 1</strong></p><figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">输入</span><br><span class="line">4 6</span><br><span class="line">3 6</span><br><span class="line">2 4</span><br><span class="line">0 2</span><br><span class="line">4 7</span><br><span class="line"></span><br><span class="line">输出</span><br><span class="line">3</span><br></pre></td></tr></table></figure><h1 id="排序-贪心算法">排序 + 贪心算法</h1><p>本质上是一道最小区间覆盖问题。可使用贪心算法求解。</p><a id="more"></a><p>试想，为了覆盖点 <code>0</code>，该如何选择守卫？守卫是等价的，在能覆盖 <code>0</code> 的前提下，肯定是选择右侧覆盖范围最大的守卫，设为 <code>x</code>。</p><p>继续，为了覆盖点 <code>x</code>，该如何选择守卫……</p><figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="comment"># Time: O(n log(n)), n = len(guard)</span></span><br><span class="line"><span class="comment"># Space: O(1)</span></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">solve</span><span class="params">(L, guard)</span>:</span></span><br><span class="line">    <span class="comment"># 为了快速找出能覆盖 x 的所有守卫，将守卫按照覆盖区间排序</span></span><br><span class="line">    guard.sort(key=<span class="keyword">lambda</span> x: x[<span class="number">0</span>])</span><br><span class="line">    start, end, res = <span class="number">0</span>, <span class="number">0</span>, <span class="number">0</span></span><br><span class="line">    i, n = <span class="number">0</span>, len(guard)</span><br><span class="line">    <span class="keyword">while</span> i &lt; n:</span><br><span class="line">        <span class="keyword">if</span> guard[i][<span class="number">1</span>] &lt;= end:  <span class="comment"># 跳过覆盖范围不够远的守卫</span></span><br><span class="line">            i += <span class="number">1</span></span><br><span class="line">            <span class="keyword">continue</span></span><br><span class="line">        <span class="keyword">while</span> i &lt; n <span class="keyword">and</span> guard[i][<span class="number">0</span>] &lt;= start:  <span class="comment"># 可以覆盖 start 的守卫</span></span><br><span class="line">            end = max(end, guard[i][<span class="number">1</span>])</span><br><span class="line">            i += <span class="number">1</span></span><br><span class="line">        <span class="keyword">if</span> i &lt; n <span class="keyword">and</span> guard[i][<span class="number">0</span>] &gt; end:  <span class="comment"># 无解</span></span><br><span class="line">            <span class="keyword">return</span> <span class="number">-1</span></span><br><span class="line">        <span class="keyword">else</span>:  <span class="comment"># 放置一个守卫，守卫能覆盖的最远距离为 end</span></span><br><span class="line">            res += <span class="number">1</span></span><br><span class="line">            start = end</span><br><span class="line">        <span class="keyword">if</span> end &gt;= L:</span><br><span class="line">            <span class="keyword">return</span> res</span><br><span class="line"></span><br><span class="line">    <span class="keyword">return</span> <span class="number">-1</span></span><br><span class="line"></span><br><span class="line"></span><br><span class="line">n, L = map(int, input().split())</span><br><span class="line">guard = []</span><br><span class="line"><span class="keyword">for</span> _ <span class="keyword">in</span> range(n):</span><br><span class="line">    guard.append(list(map(int, input().split())))</span><br><span class="line">print(solve(L, guard))</span><br></pre></td></tr></table></figure>]]></content>
       
       
       <categories>
@@ -22,9 +111,9 @@
             
             <tag> 贪心算法 </tag>
             
-            <tag> 腾讯 </tag>
-            
             <tag> 牛客 </tag>
+            
+            <tag> 腾讯 </tag>
             
         </tags>
       
@@ -99,9 +188,9 @@
       
         <tags>
             
-            <tag> 多线程 </tag>
-            
             <tag> Java </tag>
+            
+            <tag> 多线程 </tag>
             
         </tags>
       
@@ -384,9 +473,9 @@
       
         <tags>
             
-            <tag> 数组 </tag>
-            
             <tag> 牛客 </tag>
+            
+            <tag> 数组 </tag>
             
             <tag> 美团 </tag>
             
@@ -442,9 +531,9 @@
       
         <tags>
             
-            <tag> 深度优先搜索 </tag>
-            
             <tag> 图 </tag>
+            
+            <tag> 深度优先搜索 </tag>
             
             <tag> 牛客 </tag>
             
@@ -529,9 +618,9 @@
       
         <tags>
             
-            <tag> 二分查找 </tag>
-            
             <tag> 牛客 </tag>
+            
+            <tag> 二分查找 </tag>
             
             <tag> 哔哩哔哩 </tag>
             
@@ -558,9 +647,9 @@
       
         <tags>
             
-            <tag> 广度优先搜索 </tag>
-            
             <tag> 牛客 </tag>
+            
+            <tag> 广度优先搜索 </tag>
             
             <tag> 哔哩哔哩 </tag>
             
@@ -614,13 +703,13 @@
       
         <tags>
             
+            <tag> 哈希表 </tag>
+            
             <tag> 力扣 </tag>
             
             <tag> 滑动窗口 </tag>
             
             <tag> 字符串 </tag>
-            
-            <tag> 哈希表 </tag>
             
         </tags>
       
@@ -672,9 +761,9 @@
       
         <tags>
             
-            <tag> 力扣 </tag>
-            
             <tag> 哈希表 </tag>
+            
+            <tag> 力扣 </tag>
             
         </tags>
       
@@ -2087,9 +2176,9 @@
       
         <tags>
             
-            <tag> 链表 </tag>
-            
             <tag> 哈希表 </tag>
+            
+            <tag> 链表 </tag>
             
             <tag> LeetCode </tag>
             
@@ -2172,9 +2261,9 @@
       
         <tags>
             
-            <tag> 动态规划 </tag>
-            
             <tag> 哈希表 </tag>
+            
+            <tag> 动态规划 </tag>
             
             <tag> 数组 </tag>
             
@@ -2926,11 +3015,11 @@
       
         <tags>
             
+            <tag> 哈希表 </tag>
+            
             <tag> 链表 </tag>
             
             <tag> OrderedDict </tag>
-            
-            <tag> 哈希表 </tag>
             
             <tag> LeetCode </tag>
             
@@ -5710,9 +5799,9 @@
       
         <tags>
             
-            <tag> 栈 </tag>
-            
             <tag> NetworkX </tag>
+            
+            <tag> 栈 </tag>
             
         </tags>
       
@@ -5847,9 +5936,9 @@
             
             <tag> 流畅的 Python </tag>
             
-            <tag> defaultdict </tag>
-            
             <tag> special methods </tag>
+            
+            <tag> defaultdict </tag>
             
         </tags>
       
