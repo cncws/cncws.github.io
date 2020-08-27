@@ -4,6 +4,104 @@
   
     
     <entry>
+      <title>消费者</title>
+      <link href="/kafka-the-definitive-guide/consumer/"/>
+      <url>/kafka-the-definitive-guide/consumer/</url>
+      
+        <content type="html"><![CDATA[<h1 id="消费者群组">消费者群组</h1><p>消费者从属于消费者群组。</p><p><strong>一个群组里的消费者订阅的是同一个主题，每个消费者接收主题一部分分区的消息。每个分组只能被分配给群组里的一个消费者，如果消费者的数量超过主题的分区数量，那么有一部分消费者就会被闲置，不会接收到任何消息</strong>。</p><p>往群组里增加消费者是<strong>横向伸缩</strong>消费能力的主要方式。我们有必要为主题创建大量的分区，在负载增长时可以加入更多的消费者。不过要主题，不要让消费者的数量超过主题分区的数量，多余的消费者只会被闲置。</p><p>除了通过增加消费者来横向伸缩单个应用程序外，还经常出现多个应用程序从同一个主题读取数据的情况。只要保证每个应用程序有自己的消费者群组，就可以让它们获取到主题所有的消息。</p><p><img src="/uploads/image/kafka-the-definitive-guide/consumer-groups.jpg"></p><h1 id="分区再均衡">分区再均衡</h1><p><strong>再均衡</strong>：分区的所有权从一个消费者转移到另一个消费者。在再均衡期间，消费者无法读取消息，造成整个群组一小段时间的不可用。</p><p>消费者通过向被指派为<strong>群组协调器</strong>的 broker 发送<strong>心跳</strong>来维持它们和群组的从属关系以及他们对分区的所有权关系。消费者会在轮询消息或提交偏移量时发送心跳。如果消费者停止发送心跳的时间足够长，会话就会过期，群组协调器认为它已经死亡，就会触发一次再均衡。</p><h1 id="创建-kafka-消费者">创建 Kafka 消费者</h1><p>创建 <code>KafkaConsumer</code> 对象与创建 <code>KafkaProducer</code> 对象非常相似。</p><figure class="highlight java"><table><tr><td class="code"><pre><span class="line">Properties props = <span class="keyword">new</span> Properties();</span><br><span class="line"><span class="comment">// 1. Kafka 集群的连接字符串</span></span><br><span class="line">props.put(<span class="string">"bootstrap.servers"</span>, <span class="string">"broker1:9092,broker2:9092"</span>);</span><br><span class="line"><span class="comment">// 2,3. 把字节数组转成 Java 对象的 deserializer</span></span><br><span class="line">props.put(<span class="string">"key.deserializer"</span>, <span class="string">"org.apache.kafka.common.serialization.StringDeserializer"</span>);</span><br><span class="line">props.put(<span class="string">"value.deserializer"</span>, <span class="string">"org.apache.kafka.common.serialization.StringDeserializer"</span>);</span><br><span class="line"><span class="comment">// 4. 属于哪一个消费者群组，不是必需的，创建不属于任何一个群组的消费者也是可以的，只是不太常见</span></span><br><span class="line">props.put(<span class="string">"group.id"</span>, <span class="string">"CountryCounter"</span>);</span><br><span class="line"></span><br><span class="line">KafkaConsumer&lt;String, String&gt; consumer = <span class="keyword">new</span> KafkaConsumer&lt;&gt;(props);</span><br></pre></td></tr></table></figure><h1 id="订阅主题">订阅主题</h1><p><code>subscribe()</code> 方法接受一个主题<strong>列表</strong>作为参数；也可以传入一个正则表达式。正则表达式可以匹配多个主题，如果有人创建了新的主题，并且主题的名字与正则表达式匹配，那么会立即触发一次再均衡，消费者就可以读取新添加的主题。</p><figure class="highlight java"><table><tr><td class="code"><pre><span class="line">consumer.subscribe(Collections.singletonList(<span class="string">"customerCountries"</span>));</span><br><span class="line"><span class="comment">// 或</span></span><br><span class="line">consumer.subscribe(<span class="string">"test.*"</span>);</span><br></pre></td></tr></table></figure><a id="more"></a><h1 id="轮询">轮询</h1><p>消息轮询是消费者 API 的核心，通过一个简单的轮询向服务器请求数据。轮询会处理所有的细节，包括群组协调、分区再均衡、发送心跳和获取数据。</p><figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="keyword">try</span> &#123;</span><br><span class="line">    <span class="keyword">while</span> (<span class="keyword">true</span>) &#123;  <span class="comment">// 无限循环</span></span><br><span class="line">        ConsumerRecords&lt;String, String&gt; records = consumer.poll(<span class="number">100</span>);  <span class="comment">// 轮询</span></span><br><span class="line">        <span class="keyword">for</span> (ConsumerRecord&lt;String, String&gt; record : records) &#123;</span><br><span class="line">            log.debug(<span class="string">"topic = %s, partition = %s, offset = %d,</span></span><br><span class="line"><span class="string">                       consumer = %s, country = %s\n"</span>,</span><br><span class="line">                       record.topic(), record.partition(), record.offset(),</span><br><span class="line">                       record.key(), record.value());</span><br><span class="line">            <span class="comment">// 其他操作</span></span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125; <span class="keyword">finally</span> &#123;</span><br><span class="line">    consumer.close();</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure><p>消费者持续对 Kafka 进行轮询。传给 <code>poll()</code> 方法的参数是一个超时时间，用于控制 <code>poll()</code> 方法的阻塞时间，在指定的毫秒数内会一直等待 broker 返回数据。<code>poll()</code> 返回一个记录列表。一般会遍历这个列表，逐条处理这些记录。在第一次调用消费者的 <code>poll()</code> 时，它会负责查找 <code>GroupCoordinator</code>，然后加入群组，接受分配的分区。如果发生了再均衡，整个过程也是在轮询期间进行的。心跳也是从轮询里发送出去的。所以，<strong>我们要确保在轮询期间所做的任何处理工作都应该尽快完成。</strong></p><p><code>close()</code> 方法关闭消费者，网络连接和 socket 也会随之关闭，并立即触发一次再均衡，而不是等待群组协调器发现它不再发送心跳并认定死亡，因为那样需要更长的时间。</p><blockquote><p>按照规则，一个消费者使用一个线程。</p></blockquote><h1 id="消费者的配置">消费者的配置</h1><p><a href="https://kafka.apache.org/documentation/#consumerconfigs" target="_blank" rel="noopener">Consumer Configs</a></p><ol type="1"><li><code>fetch.min.bytes</code>：消费者从服务器获取记录的最小字节数。</li><li><code>fetch.max.wait.ms</code>：不满足获取记录的最小字节数时，消费者的最大阻塞时间。</li><li><code>max.partition.fetch.bytes</code>：服务器从每个分区返回给消费者的最大字节数。<ul><li><code>max.partition.fetch.bytes</code> 必须比 broker 能够接收的最大消息的字节数（通过 <code>max.message.size</code> 属性配置）大，否则消费者可能无法读取这些消息，导致消费者一直挂起重试。</li><li>消费者需要频繁调用 <code>poll()</code> 方法来避免会话过期，如果单次返回的数据太多，消费者需要更多的时间来处理，可能无法及时进行下一个轮询来避免会话过期。如果出现这种情况，可以把 <code>max.partition.fetch.bytes</code> 值改小，或者延长会话过期时间。</li></ul></li><li><code>session.timeout.ms</code>：消费者被认为死亡之前可以与服务器断开连接的时间。<ul><li><code>heartbeat.interval.ms</code> 指定了 <code>poll()</code> 方法向协调器发送心跳的频率，<code>session.timeout.ms</code> 则指定了消费者可以多久不发送心跳。所以，一般需要同时修改这两个属性，<code>heartbeat.interval.ms</code> 必须比 <code>session.timeout.ms</code> 小，一般是三分之一。</li><li>把 <code>session.timeout.ms</code> 设得较小，可以更快地检测和恢复崩溃的节点，不过长时间的轮询或垃圾收集可能导致非预期的再均衡。把值设置得大一些，可以减少意外的再均衡，不过检测节点崩溃需要更长的时间。</li></ul></li><li><code>auto.offset.reset</code>：消费者在读取一个没有偏移量的分区或者偏移量无效的情况下该作何处理。可设置的值有 <code>latest</code>, <code>earliest</code>, <code>none</code>。</li><li><code>enable.auto.commit</code>：是否自动提交偏移量。默认值是 <code>true</code>。<code>auto.commit.interval.ms</code> 设置自动提交的间隔。</li><li><code>partition.assignment.strategy</code>：分区分配策略，值是类的名字。Kafka 有两个默认的分配策略。<ul><li>Range 策略：默认配置，值为 <code>org.apache.kafka.clients.consumer.RangeAssignor</code>。该策略会把主题的若干个连续的分区分配给消费者。</li><li>RoundRobin 策略：值为 <code>org.apache.kafka.clients.consumer.RoundRobinAssignor</code>。该策略把主题的所有分区逐个分配给消费者。</li><li>自定义策略，值为实现了 <code>org.apache.kafka.clients.consumer.ConsumerPartitionAssignor</code> 接口的自定义类的名字。</li></ul></li><li><code>client.id</code>：可以是任意字符串，broker 用它来标识从客户端发送过来的消息，通常被用在日志、度量指标和配额里。</li><li><code>max.poll.records</code>：单次调用 <code>poll()</code> 方法能够返回的记录数量。</li><li><code>receive.buffer.bytes</code> 和 <code>send.buffer.bytes</code>：socket 在读写数据时用到的 TCP 缓冲区的大小。如果被设为 -1，就使用操作系统的默认值。</li></ol><h1 id="提交和偏移量">提交和偏移量</h1><p>消费者可以使用 Kafka 来追踪消息在分区里的位置（偏移量）。我们把更新分区当前位置的操作叫作<strong>提交</strong>。</p><p>消费者往一个叫作 consumer offset 的特殊主题发送消息，消息里包含每个分区的偏移量。如果消费者一直处于运行状态，那么偏移量就没有什么用处。不过，如果消费者发生崩溃或者有新的消费者加入群组，就会触发再均衡，完成再均衡之后，每个消费者可能分配到新的分区。为了能够继续之前的工作，消费者需要读取每个分区最后一次提交的偏移量，然后从偏移量指定的地方继续处理。</p><p>如果提交的偏移量小于客户端处理的最后一个消息的偏移量，那么处于两个偏移量之间的消息就会被重复处理；如果提交的偏移量大于客户端处理的最后一个消息的偏移量，那么处于两个偏移量之间的消息将会丢失。</p><h2 id="自动提交">自动提交</h2><p>如果 <code>enable.auto.commit</code> 被设为 <code>true</code>，消费者会自动把上一次从 <code>poll()</code> 方法接收到的最大偏移量提交上去。提交时间间隔由 <code>auto.commit.interval.ms</code> 控制，默认值是 5s。所以，在再次调用 <code>poll()</code> 方法之前最好确保所有当前调用返回的消息都已经处理完毕（在调用 <code>close()</code> 方法之前也会进行自动提交）。一般情况下不会有什么问题，不过在处理异常或提前退出轮询时要格外小心。</p><h2 id="同步提交">同步提交</h2><p>把 <code>enable.auto.commit</code> 被设为 <code>false</code>，让应用程序决定何时提交偏移量。</p><p>使用 <code>commitSync()</code> 提交偏移量最简单也最可靠，这个 API 会提交当前批次最新的偏移量，提交成功后马上返回，如果提交失败就抛出异常。</p><p>只要没有发生不可恢复的错误，<code>commitSync()</code> 方法会一直尝试直至提交成功。</p><figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="keyword">for</span> (ConsumerRecord&lt;String, String&gt; record : records) &#123;</span><br><span class="line">    log.debug(<span class="string">"topic = %s, partition = %s, offset = %d,</span></span><br><span class="line"><span class="string">                consumer = %s, country = %s\n"</span>,</span><br><span class="line">                record.topic(), record.partition(), record.offset(),</span><br><span class="line">                record.key(), record.value());</span><br><span class="line">    <span class="comment">// 其他操作</span></span><br><span class="line">&#125;</span><br><span class="line"><span class="keyword">try</span> &#123;</span><br><span class="line">    consumer.commitSync();</span><br><span class="line">&#125; <span class="keyword">catch</span> (CommitFailedException e) &#123;</span><br><span class="line">    log.error(<span class="string">"commit failed"</span>, e);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure><h2 id="异步提交">异步提交</h2><p>同步提交在 broker 对提交请求作出回应之前，应用程序会一直阻塞，这样会限制应用程序的吞吐量。</p><figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="keyword">for</span> (ConsumerRecord&lt;String, String&gt; record : records) &#123;</span><br><span class="line">    <span class="comment">// 其他操作</span></span><br><span class="line">&#125;</span><br><span class="line">consumer.commitAsync();</span><br><span class="line"><span class="comment">// 带回调</span></span><br><span class="line">consumer.commitAsync(<span class="keyword">new</span> OffsetCommitCallback() &#123;</span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">onComplete</span><span class="params">(</span></span></span><br><span class="line"><span class="function"><span class="params">            Map&lt;TopicPartition, OffsetAndMetadata&gt; offsets, Exception e)</span> </span>&#123;</span><br><span class="line">        <span class="keyword">if</span> (e != <span class="keyword">null</span>) &#123;</span><br><span class="line">            log.error(<span class="string">"Commit failed for offsets &#123;&#125;"</span>, offset, e);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;);</span><br></pre></td></tr></table></figure><p><code>commitAsync()</code> 方法在提交失败时不会重试，因为在它收到服务器响应的时候，可能有一个更大的偏移量已经提交成功。<code>commitAsync()</code> 也支持回调，回调经常被用于记录提交错误或生成度量指标，不过如果你要用它来进行重试，一定要注意提交的顺序。</p><blockquote><p>可以使用一个单调递增的序列号来维护异步提交的顺序。</p></blockquote><h2 id="同步和异步组合提交">同步和异步组合提交</h2><p>一般情况下，针对偶尔出现的提交失败，不进行重试不会有太大问题，后续的提交总会有成功的。但如果这是发生在消费者或再均衡前的最后一次提交，就要确保能够提交成功。因此，在消费者关闭前一般组合使用 <code>commitAsync()</code> 和 <code>commitSync()</code>。</p><figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="keyword">try</span> &#123;</span><br><span class="line">    <span class="keyword">while</span> (<span class="keyword">true</span>) &#123;</span><br><span class="line">        <span class="comment">// ...</span></span><br><span class="line">        <span class="keyword">for</span> (ConsumerRecord&lt;String, String&gt; record : records) &#123;</span><br><span class="line">            <span class="comment">// 其他操作</span></span><br><span class="line">        &#125;</span><br><span class="line">        consumer.commitAsync();</span><br><span class="line">    &#125;</span><br><span class="line">&#125; <span class="keyword">catch</span> (Exception e) &#123;</span><br><span class="line">    <span class="comment">// ...</span></span><br><span class="line">&#125; <span class="keyword">finally</span> &#123;</span><br><span class="line">    <span class="keyword">try</span> &#123;</span><br><span class="line">        consumer.commitSync();</span><br><span class="line">    &#125; <span class="keyword">finally</span> &#123;</span><br><span class="line">        consumer.close();</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure><h2 id="提交特定的偏移量">提交特定的偏移量</h2><p>想要在批次中间提交偏移量该怎么办？消费者 API 允许在调用 <code>commitSync()</code> 和 <code>commitSync()</code> 方法时传入希望提交的分区和偏移量的 map。不过，因为消费者可能不只读取一个分区，你需要跟踪所有分区的偏移量，所以在这个层面上控制偏移量的提交会让代码变复杂。</p><figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="keyword">private</span> Map&lt;TopicPartition, OffsetAndMetadata&gt; currentOffses =</span><br><span class="line">    <span class="keyword">new</span> HashMap&lt;&gt;();</span><br><span class="line"><span class="keyword">int</span> count = <span class="number">0</span>;</span><br><span class="line"></span><br><span class="line"><span class="comment">// ...</span></span><br><span class="line"></span><br><span class="line">    <span class="keyword">for</span> (ConsumerRecord&lt;String, String&gt; record : records) &#123;</span><br><span class="line">        <span class="comment">// 其他操作</span></span><br><span class="line">        currentOffses.put(</span><br><span class="line">            <span class="keyword">new</span> TopicPartition(record.topic(), record.partition()),</span><br><span class="line">            <span class="keyword">new</span> OffsetAndMetadata(record.offset()+<span class="number">1</span>, <span class="string">"no metadata"</span>));</span><br><span class="line">        <span class="keyword">if</span> (count % <span class="number">1000</span> == <span class="number">0</span>)</span><br><span class="line">            consumer.commitAsync(currentOffsets, <span class="keyword">null</span>);  <span class="comment">// 调用 commitSync() 也可以</span></span><br><span class="line">        count++;</span><br><span class="line">    &#125;</span><br></pre></td></tr></table></figure><h1 id="再均衡监听器">再均衡监听器</h1><p>在调用 <code>subscribe()</code> 方法时传进去一个 <code>ConsumerRebalanceListener</code> 实例，<code>ConsumerRebalanceListener</code> 有两个需要实现的方法：</p><ul><li><code>onPartitionsRevoked()</code>：在消费者停止读取消息之后和再均衡开始之前调用。如果在这里提交偏移量，下一个接管分区的消费者就知道该从哪里开始读取了。</li><li><code>onPartitionsAssigned()</code>：在重新分配分区之后和消费者开始读取消息之前调用。</li></ul><figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="keyword">private</span> Map&lt;TopicPartition, OffsetAndMetadata&gt; currentOffses =</span><br><span class="line">    <span class="keyword">new</span> HashMap&lt;&gt;();</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="keyword">private</span> <span class="class"><span class="keyword">class</span> <span class="title">HandleRebalance</span> <span class="keyword">implements</span> <span class="title">ConsumerRebalanceListener</span> </span>&#123;</span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">onPartitionsAssigned</span><span class="params">(Collection&lt;TopicPartition&gt; partitions)</span> </span>&#123;</span><br><span class="line">        <span class="comment">// 获得新分区之后开始读取消息</span></span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">onPartitionsRevoked</span><span class="params">(Collection&lt;TopicPartition&gt; partitions)</span> </span>&#123;</span><br><span class="line">        <span class="comment">// 失去分区所有权之前提交当前批次的偏移量</span></span><br><span class="line">        consumer.commitSync(currentOffsets);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// ...</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">try</span> &#123;</span><br><span class="line">    consumer.subscribe(topics, <span class="keyword">new</span> HandleRebalance(consumer));  <span class="comment">// 传入再均衡监听器</span></span><br><span class="line">    <span class="keyword">while</span> (<span class="keyword">true</span>) &#123;</span><br><span class="line">        ConsumerRecords&lt;String, String&gt; records = consumer.poll(<span class="number">100</span>);</span><br><span class="line">        <span class="keyword">for</span> (ConsumerRecord&lt;String, String&gt; record : records) &#123;</span><br><span class="line">            <span class="comment">// 其他操作</span></span><br><span class="line">            currentOffses.put(</span><br><span class="line">                <span class="keyword">new</span> TopicPartition(record.topic(), record.partition()),</span><br><span class="line">                <span class="keyword">new</span> OffsetAndMetadata(record.offset()+<span class="number">1</span>, <span class="string">"no metadata"</span>));</span><br><span class="line">        &#125;</span><br><span class="line">        consumer.commitAsync(currentOffsets, <span class="keyword">null</span>);</span><br><span class="line">    &#125;</span><br><span class="line">&#125; <span class="keyword">catch</span> (Exception e) &#123;</span><br><span class="line">    <span class="comment">// ...</span></span><br><span class="line">&#125; <span class="keyword">finally</span> &#123;</span><br><span class="line">    <span class="keyword">try</span> &#123;</span><br><span class="line">        consumer.commitSync(currentOffsets);</span><br><span class="line">    &#125; <span class="keyword">finally</span> &#123;</span><br><span class="line">        consumer.close();</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure><h1 id="从特定偏移量处开始处理记录">从特定偏移量处开始处理记录</h1><p><code>poll()</code> 方法从各分区的最新偏移量处开始处理消息。不过，有时候我们也需要从特定的偏移量处开始读取消息。</p><p>如果你想从分区的起始或末尾位置开始读取消息，可以使用 <code>seekToBeginning(Collection&lt;TopicPartition tp)</code> 和 <code>seekToEnd(Collection&lt;TopicPartition tp)</code> 这两个方法。</p><p>试想一下这样的场景：应用程序从 Kafka 读取事件（可能是网站的用户点击事件流），对它们进行处理，然后把结果保存到数据库、NoSQL 存储引擎或 Hadoop。</p><p>假设我们不想丢失任何数据，也不想在数据库里多次保存相同的结果。于是，每处理一条记录就提交一次偏移量。尽管如此，在记录被保存到数据库之后以及偏移量被提交之前，应用程序仍然有可能发生崩溃，导致重复处理数据。</p><p>如果保存记录和偏移量可以在一个原子操作里完成，就可以避免出现上述情况。如果记录是保存在数据库里而偏移量是提交到 Kafka 上，那么就无法实现原子操作。</p><p>解决方案：在同一个事务里把记录和偏移量都写到数据库里。消费者在得到新分区时，从数据库里查找指定分区的偏移量，使用 <code>seek()</code> 方法定位分区的偏移量。</p><figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">SaveOffsetsOnRebalance</span> <span class="keyword">implements</span> <span class="title">ConsumerRebalanceListener</span> </span>&#123;</span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">onPartitionsRevoked</span><span class="params">(Collection&lt;TopicPartition&gt; partitions)</span> </span>&#123;</span><br><span class="line">        commitDBTransaction();  <span class="comment">// 虚构的方法：在一个事务里提交记录和偏移量</span></span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">onPartitionsAssigned</span><span class="params">(Collection&lt;TopicPartition&gt; partitions)</span> </span>&#123;</span><br><span class="line">        <span class="keyword">for</span> (TopicPartition partition : partitions) &#123;</span><br><span class="line">            consumer.seek(partition, getOffsetFromDB(partition));  <span class="comment">// 设定偏移量</span></span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// ...</span></span><br><span class="line"></span><br><span class="line">consumer.subscribe(topics, <span class="keyword">new</span> SaveOffsetsOnRebalance(consumer));</span><br><span class="line">consumer.poll(<span class="number">0</span>);  <span class="comment">// 订阅主题之后调用一次 poll() 方法，让消费者加入到消费者群组</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">for</span> (TopicPartition partition : consumer.assignment())  <span class="comment">// 定位各分区的偏移量</span></span><br><span class="line">    consumer.seek(partition, getOffsetFromDB(partition));</span><br><span class="line"></span><br><span class="line"><span class="keyword">while</span> (<span class="keyword">true</span>) &#123;</span><br><span class="line">    <span class="comment">// ...</span></span><br><span class="line">    <span class="keyword">for</span> (ConsumerRecord&lt;String, String&gt; record : records) &#123;</span><br><span class="line">        <span class="comment">// ...</span></span><br><span class="line">        <span class="comment">// 虚构方法：提交记录和偏移量</span></span><br><span class="line">        storeRecordInDB(record);</span><br><span class="line">        storeOffsetInDB(record.topic(), record.partition(), record.offset());</span><br><span class="line">    &#125;</span><br><span class="line">    commitDBTransaction();  <span class="comment">// 虚构方法：在一个事务里提交记录和偏移量</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure><h1 id="如何退出">如何退出</h1><p>如果要退出循环，需要通过另一个线程调用 <code>consumer.wakeup()</code> 方法。如果循环运行在主线程里，可以在 ShutdownHook 里调用该方法。<code>consumer.wakeup()</code> 是消费者唯一一个可以从其他线程里安全调用的方法。调用 <code>consumer.wakeup()</code> 可以退出 <code>poll()</code>，并抛出 <code>WakeupException</code> 异常。我们不需要处理 <code>WakeupException</code>，因为它只是用于跳出循环的一种方式。</p><figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="comment">// ShutdownHook 运行在单独的线程里，调用 consumer.wakeup() 方法通知消费者退出循环</span></span><br><span class="line">Runtime.getRuntime().addShutdownHook(<span class="keyword">new</span> Thread() &#123;</span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">run</span><span class="params">()</span> </span>&#123;</span><br><span class="line">        System.out.println(<span class="string">"Starting exit..."</span>);</span><br><span class="line">        consumer.weakup();</span><br><span class="line">        <span class="keyword">try</span> &#123;</span><br><span class="line">            mainThread.join();</span><br><span class="line">        &#125; <span class="keyword">catch</span> (InterruptedException e) &#123;</span><br><span class="line">            e.printStackTrace();</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;);</span><br></pre></td></tr></table></figure><h1 id="独立消费者">独立消费者</h1><p>消费者可以不加入群组：有时候，你可能只需要一个消费者从一个主题的所有分区或者某个特定的分区读取记录。这个时候就不需要消费者群组和再均衡了，只需要把主题或者分区分配给消费者，然后开始读取消息并提交偏移量。</p><p><strong>一个消费者可以订阅主题（并加入消费者群组），或者为自己分配分区，但不能同时做这两件事。</strong></p><figure class="highlight java"><table><tr><td class="code"><pre><span class="line">List&lt;PartitionInfo&gt; partitionInfos = consumer.partitionsFor(<span class="string">"topic"</span>);</span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> (partitionInfos != <span class="keyword">null</span>) &#123;</span><br><span class="line">    <span class="keyword">for</span> (PartitionInfo partition : partitionInfos)</span><br><span class="line">        partitions.add(<span class="keyword">new</span> TopicPartition(partition.topic(), partition.partition()));</span><br><span class="line">    consumer.assign(partitions);</span><br><span class="line"></span><br><span class="line">    <span class="keyword">while</span> (ture) &#123;</span><br><span class="line">        <span class="comment">// ...</span></span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>]]></content>
+      
+      
+      <categories>
+          
+          <category> 书籍 </category>
+          
+          <category> Kafka 权威指南 </category>
+          
+      </categories>
+      
+      
+    </entry>
+    
+    
+    
+    <entry>
+      <title>13. 罗马数字转整数</title>
+      <link href="/leetcode/13-roman-to-integer/"/>
+      <url>/leetcode/13-roman-to-integer/</url>
+      
+        <content type="html"><![CDATA[<p><a href="https://leetcode-cn.com/problems/roman-to-integer" target="_blank" rel="noopener">罗马数字转整数</a></p><p>罗马数字包含以下七种字符： <code>I</code>，<code>V</code>，<code>X</code>，<code>L</code>，<code>C</code>，<code>D</code> 和 <code>M</code>。</p><figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">字符          数值</span><br><span class="line">I             1</span><br><span class="line">V             5</span><br><span class="line">X             10</span><br><span class="line">L             50</span><br><span class="line">C             100</span><br><span class="line">D             500</span><br><span class="line">M             1000</span><br></pre></td></tr></table></figure><p>例如，罗马数字 2 写做 <code>II</code>，即为两个并列的 1。12 写做 <code>XII</code> ，即为 <code>X</code> + <code>II</code>。27 写做 <code>XXVII</code>, 即为 <code>XX</code> + <code>V</code> + <code>II</code>。</p><p>通常情况下，罗马数字中小的数字在大的数字的右边。但也存在特例，例如 4 不写做 <code>IIII</code>，而是 <code>IV</code>。数字 1 在数字 5 的左边，所表示的数等于大数 5 减小数 1 得到的数值 4。同样地，数字 9 表示为 <code>IX</code>。这个特殊的规则只适用于以下六种情况：</p><ul><li><code>I</code> 可以放在 <code>V</code> (5) 和 <code>X</code> (10) 的左边，来表示 4 和 9。</li><li><code>X</code> 可以放在 <code>L</code> (50) 和 <code>C</code> (100) 的左边，来表示 40 和 90。</li><li><code>C</code> 可以放在 <code>D</code> (500) 和 <code>M</code> (1000) 的左边，来表示 400 和 900。</li></ul><p>给定一个罗马数字，将其转换成整数。输入确保在 1 到 3999 的范围内。</p><p><strong>示例 1:</strong></p><figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">输入: &quot;III&quot;</span><br><span class="line">输出: 3</span><br></pre></td></tr></table></figure><p><strong>示例 2:</strong></p><figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">输入: &quot;IV&quot;</span><br><span class="line">输出: 4</span><br></pre></td></tr></table></figure><a id="more"></a><p><strong>示例 3:</strong></p><figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">输入: &quot;IX&quot;</span><br><span class="line">输出: 9</span><br></pre></td></tr></table></figure><p><strong>示例 4:</strong></p><figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">输入: &quot;LVIII&quot;</span><br><span class="line">输出: 58</span><br><span class="line">解释: L = 50, V= 5, III = 3.</span><br></pre></td></tr></table></figure><p><strong>示例 5:</strong></p><figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">输入: &quot;MCMXCIV&quot;</span><br><span class="line">输出: 1994</span><br><span class="line">解释: M = 1000, CM = 900, XC = 90, IV = 4.</span><br></pre></td></tr></table></figure><h1 id="one-pass">One Pass</h1><p>罗马数字用两个字符表示 4 (<code>IV</code>)、9 (<code>IX</code>)、40 (<code>XL</code>)、90 (<code>XC</code>)……所有的组合都有一个共同点：<strong>小的数字在前，大的数字在后</strong>。因此：若后一位的字符（<code>s[i+1]</code>）代表的数字大于当前字符（<code>s[i]</code>）代表的数字，则结果应为 <code>s[i+1] - s[i]</code>。否则，应为 <code>s[i] + s[i+1]</code>。</p><figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">   M    C     M   X    C  I  V</span><br><span class="line">1000 -100  1000 -10  100 -1  5</span><br></pre></td></tr></table></figure><figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="comment"># Time: O(n)</span></span><br><span class="line"><span class="comment"># Space: O(1)</span></span><br><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">Solution</span>:</span></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">romanToInt</span><span class="params">(self, s: str)</span> -&gt; int:</span></span><br><span class="line">        maps = &#123;<span class="string">'I'</span>: <span class="number">1</span>, <span class="string">'V'</span>: <span class="number">5</span>, <span class="string">'X'</span>: <span class="number">10</span>, <span class="string">'L'</span>: <span class="number">50</span>,</span><br><span class="line">                <span class="string">'C'</span>: <span class="number">100</span>, <span class="string">'D'</span>: <span class="number">500</span>, <span class="string">'M'</span>: <span class="number">1000</span>&#125;</span><br><span class="line">        n = len(s)</span><br><span class="line">        res = <span class="number">0</span></span><br><span class="line">        <span class="keyword">for</span> i <span class="keyword">in</span> range(n):</span><br><span class="line">            <span class="keyword">if</span> i + <span class="number">1</span> &lt; n <span class="keyword">and</span> maps[s[i + <span class="number">1</span>]] &gt; maps[s[i]]:</span><br><span class="line">                res -= maps[s[i]]</span><br><span class="line">            <span class="keyword">else</span>:</span><br><span class="line">                res += maps[s[i]]</span><br><span class="line">        <span class="keyword">return</span> res</span><br></pre></td></tr></table></figure>]]></content>
+      
+      
+      <categories>
+          
+          <category> 编程 </category>
+          
+          <category> 力扣 </category>
+          
+      </categories>
+      
+      
+        <tags>
+            
+            <tag> 字符串 </tag>
+            
+        </tags>
+      
+    </entry>
+    
+    
+    
+    <entry>
+      <title>12. 整数转罗马数字</title>
+      <link href="/leetcode/12-integer-to-roman/"/>
+      <url>/leetcode/12-integer-to-roman/</url>
+      
+        <content type="html"><![CDATA[<p><a href="https://leetcode-cn.com/problems/integer-to-roman" target="_blank" rel="noopener">整数转罗马数字</a></p><p>罗马数字包含以下七种字符： <code>I</code>，<code>V</code>，<code>X</code>，<code>L</code>，<code>C</code>，<code>D</code> 和 <code>M</code>。</p><figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">字符          数值</span><br><span class="line">I             1</span><br><span class="line">V             5</span><br><span class="line">X             10</span><br><span class="line">L             50</span><br><span class="line">C             100</span><br><span class="line">D             500</span><br><span class="line">M             1000</span><br></pre></td></tr></table></figure><p>例如，罗马数字 2 写做 <code>II</code>，即为两个并列的 1。12 写做 <code>XII</code> ，即为 <code>X</code> + <code>II</code>。27 写做 <code>XXVII</code>, 即为 <code>XX</code> + <code>V</code> + <code>II</code>。</p><p>通常情况下，罗马数字中小的数字在大的数字的右边。但也存在特例，例如 4 不写做 <code>IIII</code>，而是 <code>IV</code>。数字 1 在数字 5 的左边，所表示的数等于大数 5 减小数 1 得到的数值 4。同样地，数字 9 表示为 <code>IX</code>。这个特殊的规则只适用于以下六种情况：</p><ul><li><code>I</code> 可以放在 <code>V</code> (5) 和 <code>X</code> (10) 的左边，来表示 4 和 9。</li><li><code>X</code> 可以放在 <code>L</code> (50) 和 <code>C</code> (100) 的左边，来表示 40 和 90。</li><li><code>C</code> 可以放在 <code>D</code> (500) 和 <code>M</code> (1000) 的左边，来表示 400 和 900。</li></ul><p>给定一个整数，将其转为罗马数字。输入确保在 1 到 3999 的范围内。</p><p><strong>示例 1:</strong></p><figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">输入: 3</span><br><span class="line">输出: &quot;III&quot;</span><br></pre></td></tr></table></figure><p><strong>示例 2:</strong></p><figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">输入: 4</span><br><span class="line">输出: &quot;IV&quot;</span><br></pre></td></tr></table></figure><a id="more"></a><p><strong>示例 3:</strong></p><figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">输入: 9</span><br><span class="line">输出: &quot;IX&quot;</span><br></pre></td></tr></table></figure><p><strong>示例 4:</strong></p><figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">输入: 58</span><br><span class="line">输出: &quot;LVIII&quot;</span><br><span class="line">解释: L = 50, V = 5, III = 3.</span><br></pre></td></tr></table></figure><p><strong>示例 5:</strong></p><figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">输入: 1994</span><br><span class="line">输出: &quot;MCMXCIV&quot;</span><br><span class="line">解释: M = 1000, CM = 900, XC = 90, IV = 4.</span><br></pre></td></tr></table></figure><h1 id="贪心算法">贪心算法</h1><p>类似于现实中的找零问题：“较大面值优先”。</p><p>将所有可能的两种字符的组合，看作一种新的“面值”，然后应用贪心策略。</p><figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="comment"># Time: O(1)</span></span><br><span class="line"><span class="comment"># Space: O(1)</span></span><br><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">Solution</span>:</span></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">intToRoman</span><span class="params">(self, num: int)</span> -&gt; str:</span></span><br><span class="line">        pairs = [</span><br><span class="line">            (<span class="string">'M'</span>, <span class="number">1000</span>),</span><br><span class="line">            (<span class="string">'CM'</span>, <span class="number">900</span>), (<span class="string">'D'</span>, <span class="number">500</span>), (<span class="string">'CD'</span>, <span class="number">400</span>), (<span class="string">'C'</span>, <span class="number">100</span>),</span><br><span class="line">            (<span class="string">'XC'</span>, <span class="number">90</span>), (<span class="string">'L'</span>, <span class="number">50</span>), (<span class="string">'XL'</span>, <span class="number">40</span>), (<span class="string">'X'</span>, <span class="number">10</span>),</span><br><span class="line">            (<span class="string">'IX'</span>, <span class="number">9</span>), (<span class="string">'V'</span>, <span class="number">5</span>), (<span class="string">'IV'</span>, <span class="number">4</span>), (<span class="string">'I'</span>, <span class="number">1</span>)</span><br><span class="line">        ]</span><br><span class="line">        res = <span class="string">''</span></span><br><span class="line">        <span class="keyword">for</span> c, v <span class="keyword">in</span> pairs:</span><br><span class="line">            t = num // v    <span class="comment"># 计算重复次数</span></span><br><span class="line">            res += t * c</span><br><span class="line">            num -= t * v</span><br><span class="line">        <span class="keyword">return</span> res</span><br></pre></td></tr></table></figure>]]></content>
+      
+      
+      <categories>
+          
+          <category> 编程 </category>
+          
+          <category> 力扣 </category>
+          
+      </categories>
+      
+      
+        <tags>
+            
+            <tag> 贪心算法 </tag>
+            
+            <tag> 字符串 </tag>
+            
+        </tags>
+      
+    </entry>
+    
+    
+    
+    <entry>
+      <title>生产者</title>
+      <link href="/kafka-the-definitive-guide/producer/"/>
+      <url>/kafka-the-definitive-guide/producer/</url>
+      
+        <content type="html"><![CDATA[<h1 id="生产者概览">生产者概览</h1><p><img src="/uploads/image/kafka-the-definitive-guide/producer-record-send.jpg"></p><p>Kafka 发送消息的主要步骤：</p><ol type="1"><li>创建 <code>ProducerRecord</code> 对象，需要包含目标主题和消息内容，可以指定键或分区。发送对象时，生产者要先把键和值对象序列化成字节数组，这样才能在网络上传输。</li><li>数据被传给分区器。如果在对象里指定了分区，那么分区器就不会再做任何事情。如果没有指定分区，那么分区器就会根据键来选择一个分区。</li><li>接着，这条记录被添加到一个记录批次里，这个批次里的所有消息会被发送到相同的主题和分区上。<strong>有一个独立的线程负责把这些记录批次发送到相应的 broker 上</strong>。</li><li>服务器收到消息后，如果消息成功写入 Kafka，就返回一个 <code>RecordMetaData</code> 对象，它包含了主题和分区信息，以及记录在分区里的偏移量。如果写入失败，则会返回一个错误。生产者在收到错误之后会尝试重新发送消息，几次之后如果还是失败，就返回错误信息。</li></ol><h1 id="创建-kafka-生产者">创建 Kafka 生产者</h1><p>Kafka 生产者有 3 个必选的属性。</p><ul><li><code>bootstrap.servers</code>：broker 的地址清单，地址格式为 <code>host:port</code>。不需要包含所有的 broker 地址，生产者会自动发现。不过建议至少要提供两个 broker 地址，一旦其中一个宕机，生产者仍然能够连接到集群上。</li><li><code>key.serializer</code>：必须被设置为一个实现了 <code>org.apache.kafka.common.serialization.Serializer</code> 接口的类，生产者会使用这个类把键对象序列化成字节数组。<code>key.serializer</code> 是必须设置的，就算你打算只发送值内容。</li><li><code>value.serializer</code>：将值序列化。</li></ul><figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="keyword">private</span> Properties kafkaProps = <span class="keyword">new</span> Properties();</span><br><span class="line">kafkaProps.put(<span class="string">"bootstrap.servers"</span>, <span class="string">"broker1:9092,broker2:9092"</span>);</span><br><span class="line">kafkaProps.put(<span class="string">"key.serializer"</span>, <span class="string">"org.apache.kafka.common.serialization.StringSerializer"</span>);</span><br><span class="line">kafkaProps.put(<span class="string">"value.serializer"</span>, <span class="string">"org.apache.kafka.common.serialization.StringSerializer"</span>);</span><br><span class="line"></span><br><span class="line">Producer&lt;String, String&gt; producer = <span class="keyword">new</span> KafkaProducer&lt;String, String&gt;(kafkaProps);</span><br></pre></td></tr></table></figure><p>发送消息主要有 3 种方式：</p><ul><li><strong>发送并忘记</strong>：把消息发送给服务器，但并不关心它是否正常到达。大多数情况下，消息会正常到达（生产者会自动尝试重发）。</li><li><strong>同步发送</strong>：使用 <code>send()</code> 方法发送消息，它会返回一个 <code>Future</code> 对象，调用 <code>get()</code> 方法等待，就可以知道消息是否发送成功。</li><li><strong>异步发送</strong>：调用 <code>send()</code> 方法，并指定一个回调函数，服务器在返回响应时调用该函数。</li></ul><a id="more"></a><h1 id="发送消息到-kafka">发送消息到 Kafka</h1><figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="comment">// 创建一条消息，指定了主题，键，值。键和值对象的类型必须与生产者对象的序列化器设置相匹配。</span></span><br><span class="line">ProducerRecord&lt;String, String&gt; record =</span><br><span class="line">        <span class="keyword">new</span> ProducerRecord&lt;&gt;(<span class="string">"CustomerCountry"</span>, <span class="string">"Precision Products"</span>, <span class="string">"France"</span>);</span><br><span class="line"><span class="keyword">try</span> &#123;</span><br><span class="line">    producer.send(record);      <span class="comment">// 忽略了 Future 返回值：不关心发送结果。</span></span><br><span class="line">&#125; <span class="keyword">catch</span> (Exception e) &#123;</span><br><span class="line">    e.printStackTrace();</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure><h2 id="同步发送">同步发送</h2><figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="keyword">try</span> &#123;</span><br><span class="line">    RecordMetadata meta = producer.send(record).get();  <span class="comment">// 同步发送。</span></span><br><span class="line">&#125; <span class="keyword">catch</span> (Exception e) &#123;</span><br><span class="line">    e.printStackTrace();</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure><p><code>KafkaProducer</code> 一般会发生两类错误。<strong>可重试错误</strong>，这类错误可通过重发消息来解决。比如对于连接错误，可以通过再次建立连接解决。<code>KafkaProducer</code> 可以被配置成自动重试，如果在多次重试后仍无法解决问题，应用程序会收到一个重试异常。<strong>另一类错误无法通过重试解决</strong>，比如“消息太大”异常。对于这类错误，<code>KafkaProducer</code> 不会进行重试，直接抛出异常。</p><h2 id="异步发送消息">异步发送消息</h2><p>大多数时候，我们并不需要等待响应——尽管 Kafka 会把目标主题、分区信息和消息的偏移量发送回来，但对于发送端的应用程序来说不是必需的。不过在遇到消息发送失败时，我们需要抛出异常、记录错误日志，或者把消息写入“错误消息”文件以便日后分析。</p><p>为了在异步发送消息的同时能够对异常情况进行处理，生产者提供了回调支持。</p><figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="keyword">private</span> <span class="class"><span class="keyword">class</span> <span class="title">DemoProducerCallback</span> <span class="keyword">implements</span> <span class="title">Callback</span> </span>&#123;</span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">onCompletion</span><span class="params">(RecordMetadata recordMetada, Exception e)</span> </span>&#123;</span><br><span class="line">        <span class="keyword">if</span> (e != <span class="keyword">null</span>) &#123;</span><br><span class="line">            e.printStackTrace();</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// ...</span></span><br><span class="line"></span><br><span class="line">producer.send(record, <span class="keyword">new</span> DemoProducerCallback());  <span class="comment">// 传入回调对象</span></span><br></pre></td></tr></table></figure><h1 id="生产者的配置">生产者的配置</h1><p><a href="https://kafka.apache.org/documentation/#producerconfigs" target="_blank" rel="noopener">Producer Configs</a></p><ol type="1"><li><code>acks</code>：必须要有多少个分区副本收到消息，生产者才会认为消息写入是成功的。<ul><li><code>acks=0</code>：生产者不会等待服务器的响应。无法保证服务器成功收到消息，同时 <code>retries</code> 配置会失效。</li><li><code>acks=1</code>：默认配置。只要首领节点收到消息，生产者就会收到成功响应。收到错误响应时，生产者会重发消息。不过，如果一个未同步的节点成为新首领，消息还是会丢失。</li><li><code>acks=all</code>：只有当所有参与复制的节点全部收到消息时，生产者才会收到一个来自服务器的成功响应。</li></ul></li><li><code>buffer.memory</code>：生产者内存缓冲区的大小。当消息超出缓存时，<code>send()</code> 方法要么被阻塞（<code>max.block.ms</code>），要么抛出异常。</li><li><code>compression.type</code>：消息的压缩算法。可以设置为 <code>none</code>, <code>gzip</code>, <code>snappy</code>, <code>lz4</code> 或 <code>zstd</code>。默认为 <code>none</code>。</li><li><code>retries</code>：重发消息的次数。在 <code>max.in.flight.requests.per.connection</code> 设置不为 1 时，重发可能会导致消息的顺序改变。例如，先后发送了两个消息，而第一个消息失败了。</li><li><code>batch.size</code>：一个批次可以使用的内存大小（字节）。不过生产者并不一定都会等到批次被填满才发送。</li><li><code>linger.ms</code>：生产在发送批次之前等待更多消息加入批次的时间。生产者会在批次填满或 <code>linger.ms</code> 达到上限时把批次发送出去。</li><li><code>client.id</code>：可以是任意的字符串，服务器会用它来标识消息的来源。</li><li><code>max.in.flight.requests.per.connection</code>：生产者在收到服务器响应之前可以发送多少消息。把它设为 1 可以保证消息是按照发送的顺序写入服务器的。</li><li><code>max.block.ms</code>：调用 <code>send()</code> 方法或使用 <code>partitionsFor()</code> 方法获取元数据时生产者的阻塞时间。在阻塞时间达到 <code>max.block.ms</code> 时，生产者会抛出异常。</li><li><code>max.request.size</code>：控制生产者发送的请求大小。</li><li><code>receive.buffer.bytes</code> 和 <code>send.buffer.bytes</code>：TCP socket 接收和发送数据包的缓冲区大小。如果被设为 -1，就是用操作系统的默认值。</li></ol><h1 id="在-kafka-里使用-avro">在 Kafka 里使用 Avro</h1><p><a href="https://avro.apache.org/docs/current/index.html" target="_blank" rel="noopener">Apache Avro</a></p><p>Avro 的数据文件里包含了整个 schema。如果在每条 Kafka 记录里都嵌入 schema，会让记录的大小成倍地增加。</p><p>使用 <strong>schema 注册表</strong>：把所有写入数据需要用到的 schema 保存在注册表里，然后在记录里引用 schema 的标识符。负责读取数据的应用程序使用标识符从注册表里拉取 schema 来反序列化记录。</p><p><img src="/uploads/image/kafka-the-definitive-guide/schema-register.jpg"></p><figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="comment">// ...</span></span><br><span class="line"></span><br><span class="line"><span class="comment">// 使用 KafkaAvroSerializer 来序列化对象。</span></span><br><span class="line"><span class="comment">// KafkaAvroSerializer 也可以处理原语，所以也可以使用字符串作为键。</span></span><br><span class="line">props.put(<span class="string">"key.serializer"</span>, <span class="string">"io.confluent.kafka.serializers.KafkaAvroSerializer"</span>);</span><br><span class="line">props.put(<span class="string">"value.serializer"</span>, <span class="string">"io.confluent.kafka.serializers.KafkaAvroSerializer"</span>);</span><br><span class="line">props.put(<span class="string">"schema.registry.url"</span>, schemaUrl);</span><br><span class="line"></span><br><span class="line"><span class="comment">// 键是 String 类型，值是 Customer 类型。</span></span><br><span class="line">Producer&lt;String, Customer&gt; producer = <span class="keyword">new</span> KafkaProducer&lt;String, Customer&gt;(props);</span><br><span class="line"></span><br><span class="line"><span class="comment">// ...</span></span><br><span class="line"></span><br><span class="line"><span class="comment">// Customer 是生成的 Avro 对象</span></span><br><span class="line">ProducerRecord&lt;String, Customer&gt; record = <span class="keyword">new</span> ProducerRecord&lt;&gt;(topic, aKey, aCustomer);</span><br><span class="line"><span class="comment">// 把 Customer 对象作为记录发送出去，KafkaAvroSerializer 会处理剩下的事情。</span></span><br><span class="line">producer.send(record);</span><br></pre></td></tr></table></figure><h1 id="分区">分区</h1><p>键有两个用途：作为消息的附加信息；决定消息该被写到主题的哪个分区。</p><figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="comment">// 指定键</span></span><br><span class="line">ProducerRecord&lt;Integer, String&gt; record = <span class="keyword">new</span> ProducerRecord&lt;&gt;(topic, key, value);</span><br><span class="line"><span class="comment">// 不指定键</span></span><br><span class="line">ProducerRecord&lt;Integer, String&gt; record = <span class="keyword">new</span> ProducerRecord&lt;&gt;(topic, value);</span><br></pre></td></tr></table></figure><p>如果键为 <code>null</code>，并且使用了默认的分区器，那么记录将被随机地发送到主题内各个可用的分区上。分区器使用轮询算法（Round Robin）将消息均衡地分布到各个分区上。</p><p>同一个键总是被映射到同一个分区上。<strong>只有在不改变主题分区数量的情况下，键与分区之间的映射才能保持不变</strong>。如果要使用键来映射分区，那么最好在创建主题的时候就把分区规划好，而且永远不要增加新分区。</p><p>可通过实现 <code>org.apache.kafka.clients.producer.Partitioner</code> 接口自定义分区器。</p>]]></content>
+      
+      
+      <categories>
+          
+          <category> 书籍 </category>
+          
+          <category> Kafka 权威指南 </category>
+          
+      </categories>
+      
+      
+    </entry>
+    
+    
+    
+    <entry>
       <title>11. 盛最多水的容器</title>
       <link href="/leetcode/11-container-with-most-water/"/>
       <url>/leetcode/11-container-with-most-water/</url>
@@ -112,11 +210,11 @@
       
         <tags>
             
-            <tag> 字符串 </tag>
-            
             <tag> 递归 </tag>
             
             <tag> 动态规划 </tag>
+            
+            <tag> 字符串 </tag>
             
         </tags>
       
@@ -143,9 +241,9 @@
       
         <tags>
             
-            <tag> 字符串 </tag>
-            
             <tag> 递归 </tag>
+            
+            <tag> 字符串 </tag>
             
             <tag> 腾讯 </tag>
             
@@ -618,9 +716,9 @@
       
         <tags>
             
-            <tag> 深度优先搜索 </tag>
-            
             <tag> 图 </tag>
+            
+            <tag> 深度优先搜索 </tag>
             
             <tag> 美团 </tag>
             
@@ -796,11 +894,11 @@
       
         <tags>
             
-            <tag> 字符串 </tag>
+            <tag> 哈希表 </tag>
             
             <tag> 滑动窗口 </tag>
             
-            <tag> 哈希表 </tag>
+            <tag> 字符串 </tag>
             
         </tags>
       
@@ -1879,9 +1977,9 @@
       
         <tags>
             
-            <tag> 最大公约数 </tag>
-            
             <tag> 素数 </tag>
+            
+            <tag> 最大公约数 </tag>
             
             <tag> 阿里巴巴 </tag>
             
@@ -2211,9 +2309,9 @@
       
         <tags>
             
-            <tag> 链表 </tag>
-            
             <tag> 哈希表 </tag>
+            
+            <tag> 链表 </tag>
             
             <tag> LeetCode </tag>
             
@@ -2296,9 +2394,9 @@
       
         <tags>
             
-            <tag> 动态规划 </tag>
-            
             <tag> 哈希表 </tag>
+            
+            <tag> 动态规划 </tag>
             
             <tag> 数组 </tag>
             
@@ -2437,9 +2535,9 @@
       
         <tags>
             
-            <tag> 深度优先搜索 </tag>
-            
             <tag> 递归 </tag>
+            
+            <tag> 深度优先搜索 </tag>
             
             <tag> 树 </tag>
             
@@ -2932,9 +3030,9 @@
       
         <tags>
             
-            <tag> 链表 </tag>
-            
             <tag> 递归 </tag>
+            
+            <tag> 链表 </tag>
             
         </tags>
       
@@ -3046,11 +3144,11 @@
       
         <tags>
             
+            <tag> 哈希表 </tag>
+            
             <tag> 链表 </tag>
             
             <tag> OrderedDict </tag>
-            
-            <tag> 哈希表 </tag>
             
             <tag> LeetCode </tag>
             
@@ -4390,9 +4488,9 @@
       
         <tags>
             
-            <tag> 动态规划 </tag>
-            
             <tag> 栈 </tag>
+            
+            <tag> 动态规划 </tag>
             
             <tag> LeetCode </tag>
             
