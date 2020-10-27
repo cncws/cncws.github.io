@@ -11,7 +11,7 @@ class APlayerElement extends HTMLElement {
       this.aplayer.list.clear();
       this.aplayer.destroy();
     }
-  } 
+  }
 
   _camelize(str) {
     return str
