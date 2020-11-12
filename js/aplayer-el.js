@@ -44,7 +44,7 @@ class APlayerElement extends HTMLElement {
   _convertType(config) {
     for (let key in config) {
       if (config[key] === 'true' || config[key] === 'false') {
-        config[key] = (config[key] === 'true')
+        config[key] = (config[key] === 'true');
       }
     }
     if (config.lrcType) {
@@ -53,35 +53,10 @@ class APlayerElement extends HTMLElement {
   }
 
   _loadAudios(config) {
-    if (!config.audio) {
+    if (!config.audios) {
       return;
     }
-    let folder = '';
-    if (config.folder) {
-      folder = config.folder;
-      delete config.folder;
-    }
-    let parseOrder = ["artist", "name", "cover", "lrc", "theme"];
-    let audio = config.audio.split(';');
-    let _audio = [];
-    audio.forEach((single) => {
-      single = single.split(',');
-      let s = {};
-      for (let i = 0; i < single.length; i++) {
-        s[parseOrder[i]] = single[i].trim();
-      }
-      s.name = s.name || '';
-      s.artist = s.artist || '';
-      s.url = folder + s.artist + ' - ' + s.name + '.mp3';
-      if (s.cover === '-') {
-        s.cover = folder + 'cover/' + s.artist + ' - ' + s.name + '.jpg';
-      }
-      if (s.lrc === '-') {
-        s.lrc = folder + 'lyric/' + s.artist + ' - ' + s.name + '.lrc';
-      }
-      _audio.push(s);
-    });
-    config.audio = _audio;
+    config.audio = eval(config.audios.replace(/'/g, "\"").replace(/\n/g, ""));
   }
 }
 
