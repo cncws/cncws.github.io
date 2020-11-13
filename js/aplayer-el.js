@@ -57,6 +57,11 @@ class APlayerElement extends HTMLElement {
       return;
     }
     config.audio = eval(config.audios.replace(/'/g, "\"").replace(/\n/g, ""));
+    config.audio.forEach((single) => {
+      single.url = config.urlPrefix + single.url;
+      single.cover = config.coverPrefix + single.cover;
+      single.lrc = config.lrcPrefix + single.lrc;
+    });
   }
 }
 
