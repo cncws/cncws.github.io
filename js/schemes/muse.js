@@ -27,9 +27,9 @@ document.addEventListener('DOMContentLoaded', () => {
     isSidebarVisible: false,
     init            : function() {
       sidebarToggleLines.init();
-
-      window.addEventListener('mousedown', this.mousedownHandler.bind(this));
-      window.addEventListener('mouseup', this.mouseupHandler.bind(this));
+      // 点击空白处关闭 sidebar
+      //window.addEventListener('mousedown', this.mousedownHandler.bind(this));
+      //window.addEventListener('mouseup', this.mouseupHandler.bind(this));
       document.querySelector('#sidebar-dimmer').addEventListener('click', this.clickHandler.bind(this));
       document.querySelector('.sidebar-toggle').addEventListener('click', this.clickHandler.bind(this));
       document.querySelector('.sidebar-toggle').addEventListener('mouseenter', this.mouseEnterHandler.bind(this));
